@@ -1,0 +1,24 @@
+{
+  "name": "whopaid-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "npm --prefix apps/api run start:dev",
+    "dev": "npm run dev:api & npm run dev:web",
+    "build": "npm --prefix apps/api run build && npm --prefix apps/web run build",
+    "lint": "npm --prefix apps/api run lint && npm --prefix apps/web run lint",
+    "typeorm:migration:generate": "npm --prefix apps/api run typeorm:migration:generate",
+    "typeorm:migration:run": "npm --prefix apps/api run typeorm:migration:run",
+    "typeorm:migration:revert": "npm --prefix apps/api run typeorm:migration:revert",
+    "db:seed": "npm --prefix apps/api run db:seed"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {}
+}

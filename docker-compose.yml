@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: whopaid-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: whopaid
+      POSTGRES_USER: whopaid
+      POSTGRES_PASSWORD: whopaid_secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whopaid -d whopaid"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: whopaid-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      FRONTEND_ORIGIN: http://localhost:3000
+      DATABASE_URL: postgres://whopaid:whopaid_secret@postgres:5432/whopaid
+      DB_SYNCHRONIZE: "false"
+      DB_LOGGING: "false"
+      DB_CONNECT_TIMEOUT_MS: "5000"
+    command: sh -c "npm run typeorm:migration:run && npm run start"
+    ports:
+      - "3001:3001"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: whopaid-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

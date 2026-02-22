@@ -36,6 +36,7 @@ export class UsersService {
       data.phone !== undefined ? data.phone.trim() || undefined : existing.phone;
     const nextAvatar =
       data.avatarUrl !== undefined ? data.avatarUrl.trim() || undefined : existing.avatarUrl;
+    const emailChanged = nextEmail !== existing.email;
 
     if (!nextEmail && !nextPhone) {
       throw new BadRequestException('At least email or phone is required');
@@ -67,6 +68,7 @@ export class UsersService {
       email: nextEmail,
       phone: nextPhone,
       avatarUrl: nextAvatar,
+      isEmailVerified: emailChanged && nextEmail ? false : existing.isEmailVerified,
     });
 
     return this.toSafeUser(user);

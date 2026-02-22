@@ -9,3 +9,4 @@ export * from './settlement.entity';
 export * from './group-invitation.entity';
 export * from './inbox-message.entity';
 export * from './friend-request.entity';
+export * from './email-verification-token.entity';

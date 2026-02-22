@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ReactNode, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './theme-toggle';
+import { useAuthMe } from '../../lib/auth/hooks';
 import {
   ChevronUpIcon,
   HomeIcon,
@@ -23,6 +24,13 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
   const [open, setOpen] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const draggedToOpen = useRef(false);
+  const verificationLockedRoutes = ['/dashboard', '/groups', '/friends', '/inbox', '/settings'];
+  const shouldEnforceVerification = verificationLockedRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
+  const { data: me, isLoading: isMeLoading } = useAuthMe(shouldEnforceVerification);
+  const isVerificationBlocked =
+    shouldEnforceVerification && !!me?.email && !me.isEmailVerified;
 
   const navItems = [
     { href: '/dashboard', label: 'داشبورد', icon: HomeIcon },
@@ -129,7 +137,31 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
           
 
           <section id="content" className="stack" aria-live="polite">
-            {children}
+            {isVerificationBlocked ? (
+              <article className="card">
+                <h2 className="card-title">نیاز به تایید ایمیل</h2>
+                <p style={{ margin: 0 }}>
+                  برای استفاده از این بخش‌ها باید ایمیل حساب تایید شود.
+                </p>
+                <p style={{ margin: '0.5rem 0 0' }}>
+                  به صفحه پروفایل برو و گزینه ارسال لینک تایید ایمیل را بزن.
+                </p>
+                <div className="grid-two" style={{ marginTop: '0.75rem' }}>
+                  <Link href="/profile" className="btn btn-primary">
+                    رفتن به پروفایل
+                  </Link>
+                  <Link href="/dashboard" className="btn btn-secondary">
+                    داشبورد
+                  </Link>
+                </div>
+              </article>
+            ) : shouldEnforceVerification && isMeLoading ? (
+              <article className="card">
+                <p style={{ margin: 0 }}>در حال بررسی وضعیت تایید ایمیل...</p>
+              </article>
+            ) : (
+              children
+            )}
           </section>
         </div>
       </div>

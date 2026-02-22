@@ -2,6 +2,7 @@ import '../config/load-env';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import {
+  EmailVerificationToken,
   Expense,
   ExpensePayer,
   ExpenseSplit,
@@ -32,6 +33,7 @@ export const AppDataSource = new DataSource({
   },
   entities: [
     User,
+    EmailVerificationToken,
     Group,
     GroupMember,
     Expense,

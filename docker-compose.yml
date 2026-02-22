@@ -30,7 +30,7 @@ services:
         condition: service_healthy
     environment:
       PORT: 3001
-      FRONTEND_ORIGIN: http://localhost:3000
+      FRONTEND_ORIGIN: http://kidad.ir
       DATABASE_URL: postgres://whopaid:whopaid_secret@postgres:5432/whopaid
       DB_SYNCHRONIZE: "false"
       DB_LOGGING: "false"
@@ -48,7 +48,7 @@ services:
     depends_on:
       - api
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api
+      NEXT_PUBLIC_API_BASE_URL: http://kidad.ir/api
       NODE_ENV: production
     ports:
       - "3000:3000"

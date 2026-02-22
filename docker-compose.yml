@@ -35,6 +35,11 @@ services:
       DB_SYNCHRONIZE: "false"
       DB_LOGGING: "false"
       DB_CONNECT_TIMEOUT_MS: "5000"
+      EMAIL_PROVIDER: resend
+      RESEND_API_KEY: re_xxxxxxxxxxxxxxxxx
+      MAIL_FROM: no-reply@kidad.ir
+      APP_WEB_URL: https://kidad.ir
+      EMAIL_VERIFY_TTL_MINUTES: "30"
     command: sh -c "npm run typeorm:migration:run && npm run start"
     ports:
       - "3001:3001"

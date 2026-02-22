@@ -4,7 +4,7 @@ import { QueryProvider } from './providers/query-provider';
 import { AlertProvider } from './providers/alert-provider';
 
 export const metadata: Metadata = {
-  title: 'کی‌داد؟ | WhoPaid?',
+  title: 'کی‌داد؟',
   description: 'اپلیکیشن تقسیم هزینه برای دوستا و خانواده – کی‌داد؟'
 };
 

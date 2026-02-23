@@ -27,7 +27,7 @@ export class AuthService {
 
   async signup(dto: SignupDto) {
     if (!dto.email && !dto.phone) {
-      throw new BadRequestException('Either email or phone is required');
+      throw new BadRequestException('ایمیل یا شماره موبایل الزامی است.');
     }
 
     if (dto.email) {
@@ -35,7 +35,7 @@ export class AuthService {
         where: { email: dto.email.toLowerCase() },
       });
       if (existingByEmail) {
-        throw new BadRequestException('Email is already registered');
+        throw new BadRequestException('این ایمیل قبلا ثبت شده است.');
       }
     }
 
@@ -44,7 +44,7 @@ export class AuthService {
         where: { phone: dto.phone },
       });
       if (existingByPhone) {
-        throw new BadRequestException('Phone is already registered');
+        throw new BadRequestException('این شماره موبایل قبلا ثبت شده است.');
       }
     }
 
@@ -61,7 +61,13 @@ export class AuthService {
     );
 
     if (user.email) {
-      await this.issueVerificationToken(user);
+      try {
+        await this.issueVerificationToken(user);
+      } catch (_error) {
+        throw new BadRequestException(
+          'ارسال ایمیل تایید ناموفق بود. لطفا دوباره تلاش کنید.',
+        );
+      }
       return {
         user: this.toSafeUser(user),
         requiresEmailVerification: true,
@@ -86,11 +92,11 @@ export class AuthService {
     });
 
     if (!user || !verifyPassword(dto.password, user.passwordHash)) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('اطلاعات ورود نامعتبر است.');
     }
     if (user.email && !user.isEmailVerified) {
       throw new UnauthorizedException(
-        'Email is not verified. Please verify your email first.',
+        'ایمیل حساب تایید نشده است. ابتدا ایمیل تایید را انجام دهید.',
       );
     }
 
@@ -111,20 +117,20 @@ export class AuthService {
     });
 
     if (!tokenEntry) {
-      throw new BadRequestException('Verification token is invalid');
+      throw new BadRequestException('لینک تایید معتبر نیست.');
     }
     if (tokenEntry.usedAt) {
-      throw new BadRequestException('Verification token is already used');
+      throw new BadRequestException('این لینک قبلا استفاده شده است.');
     }
     if (tokenEntry.expiresAt.getTime() < Date.now()) {
-      throw new BadRequestException('Verification token has expired');
+      throw new BadRequestException('مهلت لینک تایید به پایان رسیده است.');
     }
 
     const user = await this.usersRepository.findOne({
       where: { id: dto.userId },
     });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('کاربر پیدا نشد.');
     }
 
     const usedAt = new Date();
@@ -162,14 +168,20 @@ export class AuthService {
       return { sent: true };
     }
 
-    await this.issueVerificationToken(user);
+    try {
+      await this.issueVerificationToken(user);
+    } catch (_error) {
+      throw new BadRequestException(
+        'ارسال ایمیل تایید ناموفق بود. لطفا دوباره تلاش کنید.',
+      );
+    }
     return { sent: true };
   }
 
   async me(token: string) {
     const userId = this.parseToken(token);
     if (!userId) {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException('توکن نامعتبر است.');
     }
 
     const user = await this.usersRepository.findOne({
@@ -177,7 +189,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('کاربر پیدا نشد.');
     }
 
     return this.toSafeUser(user);
@@ -197,7 +209,7 @@ export class AuthService {
 
   private async issueVerificationToken(user: User) {
     if (!user.email) {
-      throw new BadRequestException('User does not have an email');
+      throw new BadRequestException('حساب کاربر ایمیل ندارد.');
     }
 
     const rawToken = randomBytes(32).toString('hex');

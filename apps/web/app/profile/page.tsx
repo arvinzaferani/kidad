@@ -92,7 +92,8 @@ export default function ProfilePage() {
     setMessage(null);
     try {
       await resendVerificationMutation.mutateAsync({ email: email.trim() });
-      const msg = 'اگر ایمیل ثبت شده باشد، لینک تایید ارسال شد.';
+      const msg =
+        'اگر ایمیل ثبت شده باشد، لینک تایید ارسال شد. اگر در Inbox نبود، پوشه Spam را بررسی کن.';
       setMessage(msg);
       showAlert(msg, 'success');
     } catch (submitError) {
@@ -191,8 +192,8 @@ export default function ProfilePage() {
         ) : null}
       </Card>
 
-      {message ? <p style={{ margin: 0, color: 'var(--accent)' }}>{message}</p> : null}
-      {error ? <p style={{ margin: 0, color: '#dc2626' }}>{error}</p> : null}
+      {message ? <div className="notice notice-success">{message}</div> : null}
+      {error ? <div className="notice notice-error">{error}</div> : null}
     </AppShell>
   );
 }

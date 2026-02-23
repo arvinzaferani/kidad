@@ -693,6 +693,23 @@ gap: 4px;
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
 }
 
+.notice {
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.notice-success {
+  border-color: color-mix(in srgb, #16a34a 45%, var(--border));
+  background: color-mix(in srgb, #16a34a 8%, var(--card));
+}
+
+.notice-error {
+  border-color: color-mix(in srgb, #dc2626 45%, var(--border));
+  background: color-mix(in srgb, #dc2626 8%, var(--card));
+}
+
 .btn:focus-visible,
 .field:focus-visible,
 .theme-toggle:focus-visible,

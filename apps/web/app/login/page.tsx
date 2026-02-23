@@ -29,6 +29,7 @@ export default function LoginPage() {
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [showResendButton, setShowResendButton] = useState(false);
 
   const loginMutation = useLogin();
   const signupMutation = useSignup();
@@ -48,6 +49,7 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setInfo(null);
+    setShowResendButton(false);
 
     try {
       if (mode === 'login') {
@@ -65,7 +67,9 @@ export default function LoginPage() {
         });
 
         if (isEmail(value)) {
-          setInfo('ایمیل تایید برای شما ارسال شد. بعد از تایید، وارد شوید.');
+          setInfo(
+            'ایمیل تایید ارسال شد. اگر در Inbox نبود، پوشه Spam را هم بررسی کن.',
+          );
           setMode('login');
           return;
         }
@@ -73,7 +77,15 @@ export default function LoginPage() {
 
       router.push(nextPath);
     } catch (mutationError) {
-      setError(getApiError(mutationError));
+      const message = getApiError(mutationError);
+      setError(message);
+      if (
+        mode === 'login' &&
+        isEmail(identifier.trim()) &&
+        message.includes('ایمیل حساب تایید نشده')
+      ) {
+        setShowResendButton(true);
+      }
     }
   };
 
@@ -88,7 +100,9 @@ export default function LoginPage() {
     setInfo(null);
     try {
       await resendVerificationMutation.mutateAsync({ email: value });
-      setInfo('اگر ایمیل ثبت شده باشد، لینک تایید مجدد ارسال شد.');
+      setInfo(
+        'اگر ایمیل ثبت شده باشد، لینک تایید ارسال شد. اگر در Inbox نبود، پوشه Spam را بررسی کن.',
+      );
     } catch (mutationError) {
       setError(getApiError(mutationError));
     }
@@ -150,17 +164,17 @@ export default function LoginPage() {
           />
 
           {error ? (
-            <p style={{ color: '#dc2626', margin: 0, fontSize: '0.9rem' }}>{error}</p>
+            <div className="notice notice-error">{error}</div>
           ) : null}
           {info ? (
-            <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.9rem' }}>{info}</p>
+            <div className="notice notice-success">{info}</div>
           ) : null}
 
           <button type="submit" className="btn btn-primary" disabled={pending}>
             {pending ? 'در حال ارسال...' : mode === 'login' ? 'ورود' : 'ثبت‌نام'}
           </button>
 
-          {mode === 'login' ? (
+          {mode === 'login' && showResendButton ? (
             <button
               type="button"
               className="btn btn-secondary"

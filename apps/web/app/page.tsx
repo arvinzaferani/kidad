@@ -5,17 +5,27 @@ export default function HomePage() {
   return (
     <AppShell title="مدیریت خرج‌های مشترک" subtitle="ساده، سریع، شفاف">
       <Card>
-        <p>اگر حسابت رو تو ۵ ثانیه نفهمیدی، یعنی مشکل از ماست.</p>
+        <p>حساب حسابه، کاکا برادر!</p>
       </Card>
 
-      <div className="grid-two">
+      <div className="login-parent">
         <Link href="/login" className="btn btn-primary">
           ورود
         </Link>
-        <Link href="/dashboard" className="btn btn-secondary">
+        {/* <Link href="/dashboard" className="btn btn-secondary">
           داشبورد
-        </Link>
+        </Link> */}
       </div>
+      <p
+        style={{
+          margin: '4rem 0 0',
+          textAlign: 'center',
+          opacity: 0.68,
+          fontSize: '0.78rem',
+        }}
+      >
+        © Developed by Arvin Zaferni
+      </p>
     </AppShell>
   );
 }

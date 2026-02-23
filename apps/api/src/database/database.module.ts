@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
+  EmailLoginToken,
   EmailVerificationToken,
   Expense,
   ExpensePayer,
@@ -12,6 +13,7 @@ import {
   InboxMessage,
   Settlement,
   User,
+  PasswordResetToken,
 } from './entities';
 
 const isTruthy = (value?: string) =>
@@ -31,6 +33,8 @@ const isTruthy = (value?: string) =>
       entities: [
         User,
         EmailVerificationToken,
+        PasswordResetToken,
+        EmailLoginToken,
         Group,
         GroupMember,
         Expense,

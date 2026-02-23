@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { ReactNode, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './theme-toggle';
-import { useAuthMe } from '../../lib/auth/hooks';
+import { useAuthMe, useLogout } from '../../lib/auth/hooks';
+import { getAuthToken } from '../../lib/auth/token';
 import {
   ChevronUpIcon,
   HomeIcon,
@@ -25,10 +26,16 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
   const dragStartY = useRef<number | null>(null);
   const draggedToOpen = useRef(false);
   const verificationLockedRoutes = ['/dashboard', '/groups', '/friends', '/inbox', '/settings'];
+  const centeredRoutes = ['/', '/login', '/verify-email', '/reset-password', '/email-login', '/verify-otp'];
   const shouldEnforceVerification = verificationLockedRoutes.some((route) =>
     pathname.startsWith(route),
   );
+  const shouldCenterMain = centeredRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
   const { data: me, isLoading: isMeLoading } = useAuthMe(shouldEnforceVerification);
+  const logout = useLogout();
+  const isLoggedIn = Boolean(getAuthToken());
   const isVerificationBlocked =
     shouldEnforceVerification && !!me?.email && !me.isEmailVerified;
 
@@ -40,9 +47,13 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
     { href: '/profile', label: 'پروفایل', icon: UserIcon },
   ];
 
-  return (<> <header className=" app-header" role="banner">
-    <h1 className="page-title">{title}</h1>
-    {subtitle ? <p className="subtitle">{subtitle}</p> : null}
+  return (<> <header className="app-header" role="banner">
+    <div className="app-header-inner">
+      <div className="app-header-copy">
+        <h1 className="page-title">{title}</h1>
+        {subtitle ? <p className="subtitle">{subtitle}</p> : null}
+      </div>
+    </div>
   </header>
     <main className="app-shell" id="top">
        
@@ -106,7 +117,6 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
               ×
             </button>
           </div>
-
           <nav className="sidebar-nav">
             {navItems.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -130,10 +140,23 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
 
           <div className="sidebar-footer">
             <ThemeToggle />
+            {isLoggedIn ? (
+              <button
+                type="button"
+                className="btn btn-exit"
+                style={{ marginTop: '0.6rem' }}
+                onClick={() => {
+                  logout();
+                  window.location.href = '/login';
+                }}
+              >
+                خروج
+              </button>
+            ) : null}
           </div>
         </div>
        
-        <div className="app-main">
+        <div className={`app-main ${shouldCenterMain ? 'app-main-centered' : ''}`}>
           
 
           <section id="content" className="stack" aria-live="polite">

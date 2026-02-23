@@ -27,14 +27,14 @@ interface LoginResponse {
 }
 
 interface SignupPayload {
-  email?: string;
-  phone?: string;
+  email: string;
   password: string;
   nickname?: string;
+  phone?: string;
 }
 
 interface LoginPayload {
-  identifier: string;
+  email: string;
   password: string;
 }
 
@@ -95,6 +95,50 @@ export function useLogin() {
     },
     meta: {
       humanErrorMessage: 'ورود ناموفق بود',
+    },
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: async (payload: { email: string }) => {
+      const { data } = await apiClient.post<{ sent: boolean }>('/auth/forgot-password', payload);
+      return data;
+    },
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: async (payload: { userId: string; token: string; password: string }) => {
+      const { data } = await apiClient.post<{ reset: boolean }>('/auth/reset-password', payload);
+      return data;
+    },
+  });
+}
+
+export function useSendLoginLink() {
+  return useMutation({
+    mutationFn: async (payload: { email: string }) => {
+      const { data } = await apiClient.post<{ sent: boolean }>('/auth/send-login-link', payload);
+      return data;
+    },
+  });
+}
+
+export function useLoginWithLink() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { userId: string; token: string }) => {
+      const { data } = await apiClient.post<AuthResponse>('/auth/login-with-link', payload);
+      return data;
+    },
+    onSuccess: async (data) => {
+      if (data.token) {
+        setAuthToken(data.token);
+        await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      }
     },
   });
 }

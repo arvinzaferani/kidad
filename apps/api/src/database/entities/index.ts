@@ -10,3 +10,5 @@ export * from './group-invitation.entity';
 export * from './inbox-message.entity';
 export * from './friend-request.entity';
 export * from './email-verification-token.entity';
+export * from './password-reset-token.entity';
+export * from './email-login-token.entity';

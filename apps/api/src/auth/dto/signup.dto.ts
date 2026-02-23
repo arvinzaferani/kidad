@@ -1,11 +1,12 @@
-import { IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class SignupDto {
-  @ValidateIf((o: SignupDto) => !o.phone)
   @IsEmail()
-  email?: string;
+  @MaxLength(120)
+  email!: string;
 
-  @ValidateIf((o: SignupDto) => !o.email)
+  @IsOptional()
+  @IsString()
   @Matches(/^09\d{9}$/)
   phone?: string;
 

@@ -4,6 +4,10 @@ import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SendLoginLinkDto } from './dto/send-login-link.dto';
+import { LoginWithLinkDto } from './dto/login-with-link.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -17,6 +21,26 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  @Post('send-login-link')
+  sendLoginLink(@Body() dto: SendLoginLinkDto) {
+    return this.authService.sendLoginLink(dto);
+  }
+
+  @Post('login-with-link')
+  loginWithLink(@Body() dto: LoginWithLinkDto) {
+    return this.authService.loginWithLink(dto);
   }
 
   @Post('verify-email')

@@ -2,6 +2,7 @@ import '../config/load-env';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import {
+  EmailLoginToken,
   EmailVerificationToken,
   Expense,
   ExpensePayer,
@@ -13,6 +14,7 @@ import {
   InboxMessage,
   Settlement,
   User,
+  PasswordResetToken,
 } from './entities';
 
 const isTruthy = (value?: string) =>
@@ -34,6 +36,8 @@ export const AppDataSource = new DataSource({
   entities: [
     User,
     EmailVerificationToken,
+    PasswordResetToken,
+    EmailLoginToken,
     Group,
     GroupMember,
     Expense,

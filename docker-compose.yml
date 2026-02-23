@@ -26,6 +26,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       PORT: 3001
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-https://kidad.ir}
@@ -33,11 +35,14 @@ services:
       DB_SYNCHRONIZE: "false"
       DB_LOGGING: "false"
       DB_CONNECT_TIMEOUT_MS: "5000"
-      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-smtp}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-no-reply@kidad.ir}
       APP_WEB_URL: ${APP_WEB_URL:-https://kidad.ir}
       EMAIL_VERIFY_TTL_MINUTES: ${EMAIL_VERIFY_TTL_MINUTES:-30}
+      SMTP_HOST: ${SMTP_HOST:-host.docker.internal}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_HELO_NAME: ${SMTP_HELO_NAME:-mail.kidad.ir}
     command: sh -c "npm run typeorm:migration:run && npm run start"
     ports:
       - "3001:3001"

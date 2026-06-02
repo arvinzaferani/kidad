@@ -68,6 +68,30 @@ export class AuthMailerService {
     });
   }
 
+  async sendInboxNotificationEmail(params: {
+    to: string;
+    nickname: string;
+    message: string;
+  }) {
+    const appUrl = process.env.APP_WEB_URL ;
+    const inboxUrl = `${appUrl}/inbox`;
+    await this.sendEmail({
+      to: params.to,
+      subject: 'اعلان جدید در کی‌داد',
+      html: `
+        <div style="font-family: sans-serif; line-height: 1.7">
+          <p>${params.nickname} عزیز،</p>
+          <p>یک اعلان جدید برای شما ثبت شد:</p>
+          <p style="padding:10px 12px;border:1px solid #ddd;border-radius:8px">${params.message}</p>
+          <p><a href="${inboxUrl}" style="display:inline-block;padding:10px 14px;background:#1f8d61;color:#fff;text-decoration:none;border-radius:6px">مشاهده اینباکس</a></p>
+          <p>اگر دکمه کار نکرد، این لینک را باز کنید:</p>
+          <p>${inboxUrl}</p>
+          <p>اگر ایمیل را در Inbox پیدا نکردید، پوشه Spam را هم بررسی کنید.</p>
+        </div>
+      `,
+    });
+  }
+
   private async sendEmail(params: {
     to: string;
     subject: string;

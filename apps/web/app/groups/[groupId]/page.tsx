@@ -1,15 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import { AppShell, Card, Placeholder } from '../../components/ui';
-import { DateTimePicker } from '../../components/date-time-picker';
+import { PersianDateTimePicker } from '../../components/date-time-picker';
 import { getApiError, useAuthMe } from '../../../lib/auth/hooks';
 import {
   CreateSettlementPayload,
   GroupMemberSummary,
   SplitType,
   useAddFriendToGroup,
+  useAddGuestMember,
   useCreateSettlement,
   useCreateExpense,
   useGroup,
@@ -94,16 +94,21 @@ export default function GroupPage({ params }: GroupPageProps) {
   const createExpenseMutation = useCreateExpense();
   const createSettlementMutation = useCreateSettlement();
   const addFriendToGroupMutation = useAddFriendToGroup();
+  const addGuestMemberMutation = useAddGuestMember();
   const settleSettlementMutation = useSettleSettlement();
   const inviteMutation = useInviteToGroup();
   const [expensesPage, setExpensesPage] = useState(1);
   const [settlementsPage, setSettlementsPage] = useState(1);
   const [friendPicker, setFriendPicker] = useState('');
+  const [friendModalOpen, setFriendModalOpen] = useState(false);
   const { data: settlements } = useSettlements(params.groupId, settlementsPage, 8);
   const { data: expenses } = useGroupExpenses(params.groupId, expensesPage, 8);
   const { data: friends, isError: isFriendsError } = useFriends(me?.id, 1, 100);
 
   const [inviteIdentifier, setInviteIdentifier] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [expenseDescription, setExpenseDescription] = useState('');
@@ -118,26 +123,26 @@ export default function GroupPage({ params }: GroupPageProps) {
 
   const members = group?.members ?? [];
   const myMember = members.find((member) => member.userId === me?.id);
-  const groupMemberIds = new Set(members.map((member) => member.userId));
+  const groupMemberUserIds = new Set(members.map((member) => member.userId).filter(Boolean));
   const availableFriends = (friends?.items ?? []).filter(
-    (friend) => !groupMemberIds.has(friend.user.id),
+    (friend) => !groupMemberUserIds.has(friend.user.id),
   );
 
   const selectedMemberIds = useMemo(() => {
     if (!members.length) return [];
     const defaultsMissing = Object.keys(memberSelection).length === 0;
     if (defaultsMissing) {
-      return members.map((member) => member.userId);
+      return members.map((member) => member.id);
     }
     return members
-      .filter((member) => memberSelection[member.userId] !== false)
-      .map((member) => member.userId);
+      .filter((member) => memberSelection[member.id] !== false)
+      .map((member) => member.id);
   }, [members, memberSelection]);
 
-  const onToggleMember = (userId: string) => {
+  const onToggleMember = (memberId: string) => {
     setMemberSelection((prev) => ({
       ...prev,
-      [userId]: !(prev[userId] !== false),
+      [memberId]: !(prev[memberId] !== false),
     }));
   };
 
@@ -157,6 +162,28 @@ export default function GroupPage({ params }: GroupPageProps) {
       setInviteIdentifier('');
       setInviteMessage('دعوت ارسال شد.');
       showAlert('دعوت ارسال شد.', 'success');
+    } catch (error) {
+      const msg = getApiError(error);
+      setFormError(msg);
+      showAlert(msg, 'error');
+    }
+  };
+
+  const onAddGuestMember = async () => {
+    if (!group?.id) return;
+    setFormError(null);
+    try {
+      await addGuestMemberMutation.mutateAsync({
+        groupId: group.id,
+        name: guestName.trim(),
+        email: guestEmail.trim() || undefined,
+        phone: guestPhone.trim() || undefined,
+      });
+      setGuestName('');
+      setGuestEmail('');
+      setGuestPhone('');
+      setFriendModalOpen(false);
+      showAlert('عضو مهمان اضافه شد.', 'success');
     } catch (error) {
       const msg = getApiError(error);
       setFormError(msg);
@@ -191,10 +218,10 @@ export default function GroupPage({ params }: GroupPageProps) {
 
     const splits =
       splitType === 'EQUAL'
-        ? selectedMemberIds.map((userId) => ({ userId, value: 1 }))
-        : selectedMemberIds.map((userId) => ({
-            userId,
-            value: parseNumericInput(memberValues[userId] || ''),
+        ? selectedMemberIds.map((memberId) => ({ memberId, value: 1 }))
+        : selectedMemberIds.map((memberId) => ({
+            memberId,
+            value: parseNumericInput(memberValues[memberId] || ''),
           }));
 
     if (splitType !== 'EQUAL' && splits.some((split) => split.value <= 0 || !Number.isFinite(split.value))) {
@@ -210,12 +237,14 @@ export default function GroupPage({ params }: GroupPageProps) {
         currency: group.currency,
         splitType,
         date: pickedDate.toISOString(),
-        payers: [{ userId: paidBy, amount }],
+        payers: [{ memberId: paidBy, amount }],
         splits,
       });
       setExpenseDescription('');
       setExpenseAmount('');
+      setPaidBy('');
       setMemberValues({});
+      setMemberSelection({});
       setSplitType('EQUAL');
       setExpenseDateTime(toDateTimeLocalValue(new Date()));
       showAlert('هزینه ثبت شد.', 'success');
@@ -227,15 +256,15 @@ export default function GroupPage({ params }: GroupPageProps) {
   };
 
   const getSettlePayloadForMember = (member: GroupMemberSummary): CreateSettlementPayload | null => {
-    if (!group || !myMember || !me?.id || member.userId === me.id) return null;
+    if (!group || !myMember || member.id === myMember.id) return null;
 
     if (myMember.settlement.status === 'DEBIT' && member.settlement.status === 'CREDIT') {
       const amount = Math.min(myMember.settlement.amount, member.settlement.amount);
       if (amount > 0) {
         return {
           groupId: group.id,
-          payerId: me.id,
-          receiverId: member.userId,
+          payerMemberId: myMember.id,
+          receiverMemberId: member.id,
           amount,
           method: 'CASH',
           status: 'SETTLED',
@@ -248,8 +277,8 @@ export default function GroupPage({ params }: GroupPageProps) {
       if (amount > 0) {
         return {
           groupId: group.id,
-          payerId: member.userId,
-          receiverId: me.id,
+          payerMemberId: member.id,
+          receiverMemberId: myMember.id,
           amount,
           method: 'CASH',
           status: 'SETTLED',
@@ -303,6 +332,7 @@ export default function GroupPage({ params }: GroupPageProps) {
         friendId: friendPicker,
       });
       setFriendPicker('');
+      setFriendModalOpen(false);
       showAlert('دوست به گروه اضافه شد.', 'success');
     } catch (error) {
       const msg = getApiError(error);
@@ -312,103 +342,178 @@ export default function GroupPage({ params }: GroupPageProps) {
   };
 
   return (
-    <AppShell title={group?.name ?? `گروه ${params.groupId}#`} subtitle="اعضا، مانده‌ها و ثبت هزینه">
-     
-      <Card title="دعوت عضو جدید">
-        <div className="stack">
-          <label className="label">ایمیل یا شماره موبایل</label>
-          <input
-            className="field"
-            value={inviteIdentifier}
-            onChange={(event) => setInviteIdentifier(event.target.value)}
-            placeholder="user@email.com یا 0912..."
-          />
+    <AppShell
+      title={group?.name ?? `گروه ${params.groupId}#`}
+      subtitle="اعضا، مانده‌ها و ثبت هزینه"
+      headerImageUrl={group?.imageUrl}
+      headerImageAlt={group?.name}
+    >
+      {friendModalOpen ? (
+        <div className="modal-root" role="dialog" aria-modal="true" aria-labelledby="add-friend-modal-title">
           <button
             type="button"
-            className="btn btn-primary"
-            onClick={onInvite}
-            disabled={inviteMutation.isPending || !me?.id}
-          >
-            {inviteMutation.isPending ? 'در حال ارسال...' : 'ارسال دعوت'}
-          </button>
+            className="modal-backdrop"
+            aria-label="بستن افزودن دوست"
+            onClick={() => setFriendModalOpen(false)}
+          />
+          <div className="modal-card card">
+            <div className="modal-header">
+              <h2 id="add-friend-modal-title" className="card-title">
+                افزودن عضو به گروه
+              </h2>
+              <button
+                type="button"
+                className="sidebar-close"
+                aria-label="بستن"
+                onClick={() => setFriendModalOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            {isFriendsError ? (
+              <p style={{ margin: 0, color: '#dc2626' }}>بارگذاری لیست دوستان ناموفق بود.</p>
+            ) : null}
+            {group?.memberMode === 'CREATOR_MANAGED' ? (
+              <>
+                <div className="stack">
+                  <label className="label">نام عضو مهمان</label>
+                  <input
+                    className="field"
+                    value={guestName}
+                    onChange={(event) => setGuestName(event.target.value)}
+                    placeholder="مثلاً علی"
+                  />
+                  <label className="label">ایمیل (اختیاری)</label>
+                  <input
+                    className="field"
+                    value={guestEmail}
+                    onChange={(event) => setGuestEmail(event.target.value)}
+                    placeholder="example@email.com"
+                  />
+                  <label className="label">شماره موبایل (اختیاری)</label>
+                  <input
+                    className="field"
+                    value={guestPhone}
+                    onChange={(event) => setGuestPhone(event.target.value)}
+                    placeholder="0912..."
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={onAddGuestMember}
+                    disabled={addGuestMemberMutation.isPending || !guestName.trim()}
+                  >
+                    {addGuestMemberMutation.isPending ? 'در حال افزودن...' : 'افزودن عضو مهمان'}
+                  </button>
+                </div>
+                <div className="modal-divider" />
+              </>
+            ) : (
+              <>
+                <div className="stack">
+                  <label className="label">دعوت با ایمیل یا شماره موبایل</label>
+                  <input
+                    className="field"
+                    value={inviteIdentifier}
+                    onChange={(event) => setInviteIdentifier(event.target.value)}
+                    placeholder="user@email.com یا 0912..."
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={onInvite}
+                    disabled={inviteMutation.isPending || !me?.id || !inviteIdentifier.trim()}
+                  >
+                    {inviteMutation.isPending ? 'در حال ارسال...' : 'ارسال دعوت'}
+                  </button>
+                  {inviteMessage ? <p style={{ margin: 0, color: 'var(--accent)' }}>{inviteMessage}</p> : null}
+                </div>
+                <div className="modal-divider" />
+              </>
+            )}
+            {!availableFriends.length ? (
+              <Placeholder label="دوست آماده برای افزودن وجود ندارد." />
+            ) : (
+              <div className="stack">
+                <label className="label">انتخاب دوست</label>
+                <select
+                  className="field"
+                  value={friendPicker}
+                  onChange={(event) => setFriendPicker(event.target.value)}
+                >
+                  <option value="">انتخاب کن</option>
+                  {availableFriends.map((friend) => (
+                    <option key={friend.user.id} value={friend.user.id}>
+                      {friend.user.nickname}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={onAddFriendToGroup}
+                  disabled={!friendPicker || addFriendToGroupMutation.isPending}
+                >
+                  {addFriendToGroupMutation.isPending ? 'در حال افزودن...' : 'افزودن به گروه'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-        {inviteMessage ? <p style={{ margin: '0.75rem 0 0', color: 'var(--accent)' }}>{inviteMessage}</p> : null}
-      </Card>
-
-      <Card title="افزودن دوست به گروه">
-        {isFriendsError ? (
-          <p style={{ margin: 0, color: '#dc2626' }}>بارگذاری لیست دوستان ناموفق بود.</p>
-        ) : null}
-        {!availableFriends.length ? (
-          <Placeholder label="دوست آماده برای افزودن وجود ندارد." />
-        ) : (
-          <div className="stack">
-            <label className="label">انتخاب دوست</label>
-            <select
-              className="field"
-              value={friendPicker}
-              onChange={(event) => setFriendPicker(event.target.value)}
-            >
-              <option value="">انتخاب کن</option>
-              {availableFriends.map((friend) => (
-                <option key={friend.user.id} value={friend.user.id}>
-                  {friend.user.nickname}
-                </option>
-              ))}
-            </select>
+      ) : null}
+      <Card
+        title="اعضا و مانده هر نفر"
+        headerAction={
+          group ? (
             <button
               type="button"
-              className="btn btn-primary"
-              onClick={onAddFriendToGroup}
-              disabled={!friendPicker || addFriendToGroupMutation.isPending}
+              className="btn btn-secondary member-settle-btn"
+              onClick={() => setFriendModalOpen(true)}
+              disabled={isFriendsError}
             >
-              {addFriendToGroupMutation.isPending ? 'در حال افزودن...' : 'افزودن به گروه'}
+              +
             </button>
-          </div>
-        )}
-      </Card>
-
-      <Card title="اعضا و مانده هر نفر">
+          ) : null
+        }
+      >
         {isLoading ? <p style={{ margin: 0 }}>در حال بارگذاری...</p> : null}
         {isError ? <p style={{ margin: 0, color: '#dc2626' }}>خواندن گروه ناموفق بود.</p> : null}
         {!isLoading && !members.length ? <Placeholder label="هنوز عضوی در این گروه نیست." /> : null}
         <div className="member-list">
           {members.map((member) => (
-            <div key={member.userId} className="member-row">
+            <div key={member.id} className="member-row">
               <div className="member-main">
-                <div className='members-cred'>
-                <div className="member-avatar">
-                  {member.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={member.avatarUrl} alt={member.nickname} className="member-avatar-image" />
-                  ) : (
-                    member.nickname.slice(0, 1)
-                  )}
-                </div>
-                <div>
-                  <p className="member-name">
-                    {member.nickname} {member.userId === me?.id ? <span className="you-badge">شما</span> : null}
-                  </p>
-                  <p className="member-contact">{member.phone || member.email || 'بدون اطلاعات تماس'}</p>
-                </div>
+                <div className="members-cred">
+                  <div className="member-avatar">
+                    {member.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={member.avatarUrl} alt={member.nickname} className="member-avatar-image" />
+                    ) : (
+                      member.nickname.slice(0, 1)
+                    )}
+                  </div>
+                  <div>
+                    <p className="member-name">
+                      {member.nickname} {member.userId === me?.id ? <span className="you-badge">شما</span> : null}
+                      {member.isGuest ? <span className="you-badge" style={{ marginRight: '0.4rem' }}>مهمان</span> : null}
+                    </p>
+                    <p className="member-contact">{member.phone || member.email || 'بدون اطلاعات تماس'}</p>
+                  </div>
                 </div>
                 <div className="member-actions">
-                {getSettlePayloadForMember(member) ? (
-                  <button
-                    type="button"
-                    className="btn btn-secondary member-settle-btn"
-                    disabled={createSettlementMutation.isPending}
-                    onClick={() => settleWithMember(member)}
-                  >
-                    تسویه
-                  </button>
-                ) : null}
-
-              </div>
-              
+                  {getSettlePayloadForMember(member) ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary member-settle-btn"
+                      disabled={createSettlementMutation.isPending}
+                      onClick={() => settleWithMember(member)}
+                    >
+                      تسویه
+                    </button>
+                  ) : null}
+                </div>
               </div>
               {group ? getSettlementBadge(member, group.currency) : null}
-
             </div>
           ))}
         </div>
@@ -422,7 +527,7 @@ export default function GroupPage({ params }: GroupPageProps) {
             {settlements.items.map((item) => (
               <div key={item.id} className="expense-row">
                 <p className="expense-title">
-                  {item.payer?.nickname || item.payerId} ← {item.receiver?.nickname || item.receiverId}
+                  {item.payer?.nickname || item.payerMemberId} ← {item.receiver?.nickname || item.receiverMemberId}
                 </p>
                 <p className="expense-sub">
                   {formatMoney(Number(item.amount), group?.currency ?? 'TOMAN')} -{' '}
@@ -488,13 +593,15 @@ export default function GroupPage({ params }: GroupPageProps) {
               واحد پیش‌فرض: {group.currency === 'TOMAN' ? 'تومان' : 'ریال'}
             </p>
 
-            <DateTimePicker
-              id="expense-datetime"
-              label="تاریخ و زمان هزینه"
-              value={expenseDateTime}
-              onChange={setExpenseDateTime}
-              required
-            />
+            <div className="stack">
+              <PersianDateTimePicker
+                id="expense-datetime"
+                label="تاریخ و زمان هزینه"
+                value={expenseDateTime}
+                onChange={setExpenseDateTime}
+                required
+              />
+            </div>
 
             <label className="label">چه کسی پرداخت کرد؟</label>
             <select
@@ -505,7 +612,7 @@ export default function GroupPage({ params }: GroupPageProps) {
             >
               <option value="">انتخاب کن</option>
               {members.map((member) => (
-                <option key={member.userId} value={member.userId}>
+                <option key={member.id} value={member.id}>
                   {member.nickname}
                 </option>
               ))}
@@ -526,14 +633,14 @@ export default function GroupPage({ params }: GroupPageProps) {
 
             <div className="split-grid">
               {members.map((member) => {
-                const selected = selectedMemberIds.includes(member.userId);
+                const selected = selectedMemberIds.includes(member.id);
                 return (
-                  <div key={member.userId} className="split-row">
+                  <div key={member.id} className="split-row">
                     <label className="split-check">
                       <input
                         type="checkbox"
                         checked={selected}
-                        onChange={() => onToggleMember(member.userId)}
+                        onChange={() => onToggleMember(member.id)}
                       />
                       <span>{member.nickname}</span>
                     </label>
@@ -542,11 +649,11 @@ export default function GroupPage({ params }: GroupPageProps) {
                         className="field split-value"
                         type="text"
                         inputMode="decimal"
-                        value={memberValues[member.userId] || ''}
+                        value={memberValues[member.id] || ''}
                         onChange={(event) =>
                           setMemberValues((prev) => ({
                             ...prev,
-                            [member.userId]: formatNumericInput(event.target.value),
+                            [member.id]: formatNumericInput(event.target.value),
                           }))
                         }
                         placeholder={

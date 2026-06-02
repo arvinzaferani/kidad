@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { Expense } from './expense.entity';
 import { User } from './user.entity';
+import { GroupMember } from './group-member.entity';
 
 @Entity({ name: 'expense_splits' })
 export class ExpenseSplit {
@@ -16,8 +17,11 @@ export class ExpenseSplit {
   @Column()
   expenseId!: string;
 
+  @Column({ nullable: true })
+  userId?: string;
+
   @Column()
-  userId!: string;
+  groupMemberId!: string;
 
   @Column({ type: 'decimal', precision: 14, scale: 2 })
   value!: string;
@@ -30,7 +34,14 @@ export class ExpenseSplit {
 
   @ManyToOne(() => User, (user: User) => user.splits, {
     onDelete: 'CASCADE',
+    nullable: true,
   })
   @JoinColumn({ name: 'userId' })
-  user!: User;
+  user?: User;
+
+  @ManyToOne(() => GroupMember, (groupMember: GroupMember) => groupMember.splitEntries, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'groupMemberId' })
+  groupMember!: GroupMember;
 }

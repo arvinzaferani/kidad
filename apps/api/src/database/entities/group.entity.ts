@@ -5,7 +5,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Currency } from './enums';
+import { Currency, GroupMemberMode } from './enums';
 import { GroupMember } from './group-member.entity';
 import { Expense } from './expense.entity';
 import { Settlement } from './settlement.entity';
@@ -27,6 +27,16 @@ export class Group {
 
   @Column({ nullable: true })
   description?: string;
+
+  @Column({ nullable: true })
+  imageUrl?: string;
+
+  @Column({
+    type: 'enum',
+    enum: GroupMemberMode,
+    default: GroupMemberMode.STANDARD,
+  })
+  memberMode!: GroupMemberMode;
 
   @CreateDateColumn()
   createdAt!: Date;

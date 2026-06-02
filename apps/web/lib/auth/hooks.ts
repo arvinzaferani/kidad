@@ -10,6 +10,8 @@ export interface SafeUser {
   email?: string;
   phone?: string;
   isEmailVerified: boolean;
+  isAdmin: boolean;
+  isBanned: boolean;
   nickname: string;
   avatarUrl?: string;
   createdAt: string;

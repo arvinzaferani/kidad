@@ -68,7 +68,7 @@ export class UsersService {
       email: nextEmail,
       phone: nextPhone,
       avatarUrl: nextAvatar,
-      isEmailVerified: emailChanged && nextEmail ? false : existing.isEmailVerified,
+      isEmailVerified: emailChanged && nextEmail ? true : existing.isEmailVerified,
     });
 
     return this.toSafeUser(user);

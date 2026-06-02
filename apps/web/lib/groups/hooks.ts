@@ -7,12 +7,14 @@ import { PaginatedResponse } from '../api/pagination';
 export type Currency = 'TOMAN' | 'RIAL';
 export type SettlementStatus = 'DEBIT' | 'CREDIT' | 'CLEAR';
 export type SplitType = 'EQUAL' | 'EXACT' | 'PERCENT' | 'SHARE';
+export type GroupMemberMode = 'STANDARD' | 'CREATOR_MANAGED';
 
 export interface GroupSummary {
   id: string;
   name: string;
   description?: string;
   imageUrl?: string;
+  memberMode: GroupMemberMode;
   currency: Currency;
   createdAt: string;
   membersCount: number;
@@ -24,8 +26,9 @@ export interface GroupSummary {
 
 export interface GroupMemberSummary {
   id: string;
-  userId: string;
+  userId?: string;
   isAdmin: boolean;
+  isGuest: boolean;
   nickname: string;
   email?: string;
   phone?: string;
@@ -43,8 +46,8 @@ export interface GroupExpense {
   currency: Currency;
   splitType: SplitType;
   date: string;
-  payers: Array<{ id: string; userId: string; amount: string }>;
-  splits: Array<{ id: string; userId: string; value: string }>;
+  payers: Array<{ id: string; groupMemberId: string; amount: string }>;
+  splits: Array<{ id: string; groupMemberId: string; value: string }>;
 }
 
 export interface GroupDetail {
@@ -52,6 +55,7 @@ export interface GroupDetail {
   name: string;
   description?: string;
   imageUrl?: string;
+  memberMode: GroupMemberMode;
   currency: Currency;
   createdAt: string;
   mySettlement?: {
@@ -64,8 +68,8 @@ export interface GroupDetail {
 export interface SettlementItem {
   id: string;
   groupId: string;
-  payerId: string;
-  receiverId: string;
+  payerMemberId: string;
+  receiverMemberId: string;
   amount: string;
   method: 'CASH' | 'CARD' | 'BANK' | 'MANUAL';
   status: 'PENDING' | 'SETTLED';
@@ -79,6 +83,7 @@ interface CreateGroupPayload {
   description?: string;
   currency?: Currency;
   imageUrl?: string;
+  memberMode?: GroupMemberMode;
   creatorId: string;
 }
 
@@ -94,6 +99,13 @@ interface AddFriendToGroupPayload {
   friendId: string;
 }
 
+interface AddGuestMemberPayload {
+  groupId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface CreateExpensePayload {
   groupId: string;
   description: string;
@@ -101,14 +113,14 @@ export interface CreateExpensePayload {
   currency: Currency;
   splitType: SplitType;
   date: string;
-  payers: Array<{ userId: string; amount: number }>;
-  splits?: Array<{ userId: string; value: number }>;
+  payers: Array<{ memberId: string; amount: number }>;
+  splits?: Array<{ memberId: string; value: number }>;
 }
 
 export interface CreateSettlementPayload {
   groupId: string;
-  payerId: string;
-  receiverId: string;
+  payerMemberId: string;
+  receiverMemberId: string;
   amount: number;
   method?: 'CASH' | 'CARD' | 'BANK' | 'MANUAL';
   status?: 'PENDING' | 'SETTLED';
@@ -167,6 +179,21 @@ export function useInviteToGroup() {
     onSuccess: async (_, payload) => {
       await queryClient.invalidateQueries({ queryKey: ['group', payload.groupId] });
       await queryClient.invalidateQueries({ queryKey: ['inbox'] });
+    },
+  });
+}
+
+export function useAddGuestMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: AddGuestMemberPayload) => {
+      const { groupId, ...body } = payload;
+      const { data } = await apiClient.post(`/groups/${groupId}/guest-members`, body);
+      return data;
+    },
+    onSuccess: async (_, payload) => {
+      await queryClient.invalidateQueries({ queryKey: ['group', payload.groupId] });
+      await queryClient.invalidateQueries({ queryKey: ['groups'] });
     },
   });
 }

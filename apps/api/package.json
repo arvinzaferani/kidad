@@ -7,9 +7,9 @@
     "start:dev": "nest start --watch",
     "build": "nest build",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "typeorm:migration:generate": "node -r ts-node/register ../../node_modules/typeorm/cli.js -d src/database/data-source.ts migration:generate src/database/migrations/auto",
-    "typeorm:migration:run": "node -r ts-node/register ../../node_modules/typeorm/cli.js -d src/database/data-source.ts migration:run",
-    "typeorm:migration:revert": "node -r ts-node/register ../../node_modules/typeorm/cli.js -d src/database/data-source.ts migration:revert",
+    "typeorm:migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate src/database/migrations/auto",
+    "typeorm:migration:run": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run",
+    "typeorm:migration:revert": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert",
     "db:seed": "ts-node src/database/seed.ts"
   },
   "dependencies": {

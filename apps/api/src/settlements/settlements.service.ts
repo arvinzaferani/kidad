@@ -19,7 +19,6 @@ import {
   InboxMessageType,
   Settlement,
   SettlementStatus,
-  User,
 } from '../database/entities';
 import { In, Repository } from 'typeorm';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
@@ -37,16 +36,10 @@ export class SettlementsService {
     private readonly inboxRepository: Repository<InboxMessage>,
     @InjectRepository(GroupMember)
     private readonly groupMembersRepository: Repository<GroupMember>,
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
     @InjectRepository(Group)
     private readonly groupsRepository: Repository<Group>,
   ) {}
 
-  /**
-   * Given a list of expenses, compute minimal settlement suggestions
-   * (who should pay whom and how much).
-   */
   suggestSettlements(
     expenses: ExpenseWithPayersAndSplits[],
   ): SettlementSuggestion[] {
@@ -69,11 +62,11 @@ export class SettlementsService {
         id: expense.id,
         groupId: expense.groupId,
         payers: expense.payers.map((payer: ExpensePayer) => ({
-          userId: payer.userId,
+          userId: payer.groupMemberId,
           amount: Number(payer.amount),
         })),
         splits: expense.splits.map((split: ExpenseSplit) => ({
-          userId: split.userId,
+          userId: split.groupMemberId,
           value: Number(split.value),
         })),
       })),
@@ -81,55 +74,55 @@ export class SettlementsService {
   }
 
   async create(data: CreateSettlementDto & { groupId: string }) {
-    if (data.payerId === data.receiverId) {
-      throw new BadRequestException('payerId and receiverId must be different');
+    if (data.payerMemberId === data.receiverMemberId) {
+      throw new BadRequestException('payerMemberId and receiverMemberId must be different');
     }
 
-    const [group, users, memberships] = await Promise.all([
+    const [group, memberships] = await Promise.all([
       this.groupsRepository.findOne({ where: { id: data.groupId } }),
-      this.usersRepository.find({
-        where: { id: In([data.payerId, data.receiverId]) },
-      }),
       this.groupMembersRepository.find({
-        where: { groupId: data.groupId, userId: In([data.payerId, data.receiverId]) },
+        where: { id: In([data.payerMemberId, data.receiverMemberId]), groupId: data.groupId },
+        relations: { user: true },
       }),
     ]);
 
     if (!group) {
       throw new NotFoundException('Group not found');
     }
-    if (users.length < 2) {
-      throw new NotFoundException('Payer or receiver user not found');
-    }
     if (memberships.length < 2) {
-      throw new BadRequestException('Both users must be group members');
+      throw new BadRequestException('Both members must belong to the group');
     }
 
-    const payer = users.find((user) => user.id === data.payerId)!;
-    const receiver = users.find((user) => user.id === data.receiverId)!;
+    const payerMember = memberships.find((member) => member.id === data.payerMemberId)!;
+    const receiverMember = memberships.find((member) => member.id === data.receiverMemberId)!;
 
     const settlement = await this.settlementsRepository.save({
-      ...data,
+      groupId: data.groupId,
+      payerMemberId: payerMember.id,
+      receiverMemberId: receiverMember.id,
+      payerId: payerMember.userId,
+      receiverId: receiverMember.userId,
+      method: data.method,
       status: data.status ?? SettlementStatus.PENDING,
       amount: String(data.amount),
     });
 
     await this.publishSettlementInbox({
       groupId: data.groupId,
-      payerId: data.payerId,
-      receiverId: data.receiverId,
+      payerMember,
+      receiverMember,
       type: InboxMessageType.SETTLEMENT_CREATED,
-      message: `تسویه ثبت شد: ${payer.nickname} به ${receiver.nickname} مبلغ ${Math.round(data.amount).toLocaleString('fa-IR')} پرداخت می‌کند.`,
+      message: `تسویه ثبت شد: ${this.memberLabel(payerMember)} به ${this.memberLabel(receiverMember)} مبلغ ${Math.round(data.amount).toLocaleString('fa-IR')} پرداخت می‌کند.`,
       settlementId: settlement.id,
     });
 
     if (settlement.status === SettlementStatus.SETTLED) {
       await this.publishSettlementInbox({
         groupId: data.groupId,
-        payerId: data.payerId,
-        receiverId: data.receiverId,
+        payerMember,
+        receiverMember,
         type: InboxMessageType.PAYMENT_SETTLED,
-        message: `پرداخت انجام شد: ${payer.nickname} تسویه با ${receiver.nickname} را پرداخت کرد.`,
+        message: `پرداخت انجام شد: ${this.memberLabel(payerMember)} تسویه با ${this.memberLabel(receiverMember)} را پرداخت کرد.`,
         settlementId: settlement.id,
       });
     }
@@ -140,16 +133,41 @@ export class SettlementsService {
   async findByGroup(groupId: string, page = 1, limit = 10) {
     const [items, total] = await this.settlementsRepository.findAndCount({
       where: { groupId },
-      relations: { payer: true, receiver: true },
+      relations: {
+        payerMember: { user: true },
+        receiverMember: { user: true },
+      },
       order: { createdAt: 'DESC' },
       take: limit,
       skip: toSkip(page, limit),
     });
-    return buildPaginated(items, total, page, limit);
+
+    return buildPaginated(
+      items.map((item) => ({
+        ...item,
+        payer: {
+          id: item.payerMember.id,
+          nickname: this.memberLabel(item.payerMember),
+        },
+        receiver: {
+          id: item.receiverMember.id,
+          nickname: this.memberLabel(item.receiverMember),
+        },
+      })),
+      total,
+      page,
+      limit,
+    );
   }
 
   async update(id: string, data: UpdateSettlementDto) {
-    const existing = await this.settlementsRepository.findOne({ where: { id } });
+    const existing = await this.settlementsRepository.findOne({
+      where: { id },
+      relations: {
+        payerMember: { user: true },
+        receiverMember: { user: true },
+      },
+    });
     if (!existing) {
       throw new NotFoundException('Settlement not found');
     }
@@ -168,21 +186,14 @@ export class SettlementsService {
       data.status === SettlementStatus.SETTLED &&
       existing.status !== SettlementStatus.SETTLED
     ) {
-      const users = await this.usersRepository.find({
-        where: { id: In([existing.payerId, existing.receiverId]) },
+      await this.publishSettlementInbox({
+        groupId: existing.groupId,
+        payerMember: existing.payerMember,
+        receiverMember: existing.receiverMember,
+        type: InboxMessageType.PAYMENT_SETTLED,
+        message: `پرداخت انجام شد: ${this.memberLabel(existing.payerMember)} تسویه با ${this.memberLabel(existing.receiverMember)} را پرداخت کرد.`,
+        settlementId: existing.id,
       });
-      const payer = users.find((user) => user.id === existing.payerId);
-      const receiver = users.find((user) => user.id === existing.receiverId);
-      if (payer && receiver) {
-        await this.publishSettlementInbox({
-          groupId: existing.groupId,
-          payerId: existing.payerId,
-          receiverId: existing.receiverId,
-          type: InboxMessageType.PAYMENT_SETTLED,
-          message: `پرداخت انجام شد: ${payer.nickname} تسویه با ${receiver.nickname} را پرداخت کرد.`,
-          settlementId: existing.id,
-        });
-      }
     }
 
     return updated;
@@ -190,8 +201,8 @@ export class SettlementsService {
 
   private async publishSettlementInbox(params: {
     groupId: string;
-    payerId: string;
-    receiverId: string;
+    payerMember: GroupMember;
+    receiverMember: GroupMember;
     type: InboxMessageType;
     message: string;
     settlementId: string;
@@ -202,9 +213,9 @@ export class SettlementsService {
     });
 
     const recipients = new Set<string>([
-      ...members.map((member) => member.userId),
-      params.payerId,
-      params.receiverId,
+      ...members.map((member) => member.userId).filter(Boolean) as string[],
+      ...(params.payerMember.userId ? [params.payerMember.userId] : []),
+      ...(params.receiverMember.userId ? [params.receiverMember.userId] : []),
     ]);
 
     if (!recipients.size) return;
@@ -218,11 +229,15 @@ export class SettlementsService {
           message: params.message,
           meta: {
             settlementId: params.settlementId,
-            payerId: params.payerId,
-            receiverId: params.receiverId,
+            payerMemberId: params.payerMember.id,
+            receiverMemberId: params.receiverMember.id,
           },
         }),
       ),
     );
+  }
+
+  private memberLabel(member: GroupMember) {
+    return member.user?.nickname ?? member.guestName ?? 'عضو بدون نام';
   }
 }

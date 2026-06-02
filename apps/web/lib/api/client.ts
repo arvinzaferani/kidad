@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { getAuthToken } from '../auth/token';
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api';
+const baseURL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  (process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3008/api'
+    : '/api');
 
 export const apiClient = axios.create({
   baseURL,

@@ -7,7 +7,6 @@ import {
   getApiError,
   useForgotPassword,
   useLogin,
-  useResendVerification,
   useSendLoginLink,
   useSignup,
 } from '../../lib/auth/hooks';
@@ -33,18 +32,15 @@ export default function LoginPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [showResendButton, setShowResendButton] = useState(false);
 
   const loginMutation = useLogin();
   const signupMutation = useSignup();
-  const resendVerificationMutation = useResendVerification();
   const forgotPasswordMutation = useForgotPassword();
   const sendLoginLinkMutation = useSendLoginLink();
 
   const pending =
     loginMutation.isPending ||
     signupMutation.isPending ||
-    resendVerificationMutation.isPending ||
     forgotPasswordMutation.isPending ||
     sendLoginLinkMutation.isPending;
 
@@ -54,7 +50,6 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setInfo(null);
-    setShowResendButton(false);
 
     try {
       await loginMutation.mutateAsync({
@@ -65,9 +60,6 @@ export default function LoginPage() {
     } catch (mutationError) {
       const message = getApiError(mutationError);
       setError(message);
-      if (message.includes('ایمیل حساب تایید نشده')) {
-        setShowResendButton(true);
-      }
     }
   };
 
@@ -88,25 +80,8 @@ export default function LoginPage() {
         password: signupPassword,
         nickname: signupNickname.trim() || undefined,
       });
-      setInfo('ایمیل تایید ارسال شد. اگر در Inbox نبود، پوشه Spam را بررسی کن.');
-      setMode('login');
-    } catch (mutationError) {
-      setError(getApiError(mutationError));
-    }
-  };
-
-  const onResendVerification = async () => {
-    const value = loginEmail.trim();
-    if (!value) {
-      setError('ایمیل را وارد کنید.');
-      return;
-    }
-
-    setError(null);
-    setInfo(null);
-    try {
-      await resendVerificationMutation.mutateAsync({ email: value });
-      setInfo('ایمیل تایید ارسال شد. اگر در Inbox نبود، پوشه Spam را بررسی کن.');
+      setInfo('ثبت‌نام با موفقیت انجام شد. حالا وارد حساب شدی.');
+      router.push(nextPath);
     } catch (mutationError) {
       setError(getApiError(mutationError));
     }
@@ -196,16 +171,6 @@ export default function LoginPage() {
               {pending ? 'در حال ارسال...' : 'ورود'}
             </button>
 
-            {showResendButton ? (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onResendVerification}
-                disabled={pending}
-              >
-                ارسال مجدد ایمیل تایید
-              </button>
-            ) : null}
 
             <button
               type="button"

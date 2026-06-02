@@ -32,19 +32,19 @@ export class ExpensesService {
   async create(groupId: string, payload: CreateExpenseDto) {
     const memberships = await this.groupMembersRepository.find({
       where: { groupId },
-      select: { userId: true },
+      select: { id: true, userId: true },
     });
     if (!memberships.length) {
       throw new NotFoundException('Group not found or has no members');
     }
 
-    const memberIds = new Set(memberships.map((member) => member.userId));
+    const membersById = new Map(memberships.map((member) => [member.id, member]));
     if (!payload.payers?.length) {
       throw new BadRequestException('At least one payer is required');
     }
 
     for (const payer of payload.payers) {
-      if (!memberIds.has(payer.userId)) {
+      if (!membersById.has(payer.memberId)) {
         throw new BadRequestException('Payer must be a group member');
       }
     }
@@ -57,9 +57,9 @@ export class ExpensesService {
       throw new BadRequestException('Payers total must equal expense amount');
     }
 
-    const splits = this.normalizeSplits(payload, amount, memberships.map((member) => member.userId));
+    const splits = this.normalizeSplits(payload, amount, memberships.map((member) => member.id));
     for (const split of splits) {
-      if (!memberIds.has(split.userId)) {
+      if (!membersById.has(split.memberId)) {
         throw new BadRequestException('Split user must be a group member');
       }
     }
@@ -77,7 +77,8 @@ export class ExpensesService {
       await this.expensePayersRepository.save(
         payload.payers.map((payer) => ({
           expenseId: expense.id,
-          userId: payer.userId,
+          groupMemberId: payer.memberId,
+          userId: membersById.get(payer.memberId)?.userId,
           amount: String(payer.amount),
         })),
       );
@@ -87,7 +88,8 @@ export class ExpensesService {
       await this.expenseSplitsRepository.save(
         splits.map((split) => ({
           expenseId: expense.id,
-          userId: split.userId,
+          groupMemberId: split.memberId,
+          userId: membersById.get(split.memberId)?.userId,
           value: String(split.value),
         })),
       );
@@ -99,7 +101,7 @@ export class ExpensesService {
   async findByGroup(groupId: string, page = 1, limit = 10) {
     const [items, total] = await this.expensesRepository.findAndCount({
       where: { groupId },
-      relations: { payers: true, splits: true },
+      relations: { payers: { groupMember: { user: true } }, splits: { groupMember: { user: true } } },
       order: { date: 'DESC' },
       take: limit,
       skip: toSkip(page, limit),
@@ -110,7 +112,11 @@ export class ExpensesService {
   findOne(id: string) {
     return this.expensesRepository.findOne({
       where: { id },
-      relations: { payers: true, splits: true, group: true },
+      relations: {
+        payers: { groupMember: { user: true } },
+        splits: { groupMember: { user: true } },
+        group: true,
+      },
     });
   }
 
@@ -136,17 +142,17 @@ export class ExpensesService {
   private normalizeSplits(
     payload: CreateExpenseDto,
     amount: number,
-    groupUserIds: string[],
-  ): Array<{ userId: string; value: number }> {
+    groupMemberIds: string[],
+  ): Array<{ memberId: string; value: number }> {
     const requested = payload.splits ?? [];
-    const uniqueUsers = [...new Set(requested.map((split) => split.userId))];
+    const uniqueMembers = [...new Set(requested.map((split) => split.memberId))];
 
     if (payload.splitType === SplitType.EQUAL) {
-      const splitUsers = uniqueUsers.length ? uniqueUsers : groupUserIds;
-      if (!splitUsers.length) {
+      const splitMembers = uniqueMembers.length ? uniqueMembers : groupMemberIds;
+      if (!splitMembers.length) {
         throw new BadRequestException('No users to split expense');
       }
-      return this.distributeEvenly(splitUsers, amount);
+      return this.distributeEvenly(splitMembers, amount);
     }
 
     if (!requested.length) {
@@ -159,7 +165,7 @@ export class ExpensesService {
         throw new BadRequestException('Exact splits total must equal expense amount');
       }
       return requested.map((split) => ({
-        userId: split.userId,
+        memberId: split.memberId,
         value: this.round2(Number(split.value)),
       }));
     }
@@ -173,36 +179,35 @@ export class ExpensesService {
       }
 
       const result = requested.map((split) => ({
-        userId: split.userId,
+        memberId: split.memberId,
         value: this.round2((amount * Number(split.value)) / 100),
       }));
       return this.fixRoundingDelta(result, amount);
     }
 
-    // SHARE
     const shareTotal = requested.reduce((sum, split) => sum + Number(split.value), 0);
     if (shareTotal <= 0) {
       throw new BadRequestException('Share splits must be greater than zero');
     }
 
     const result = requested.map((split) => ({
-      userId: split.userId,
+      memberId: split.memberId,
       value: this.round2((amount * Number(split.value)) / shareTotal),
     }));
     return this.fixRoundingDelta(result, amount);
   }
 
-  private distributeEvenly(userIds: string[], amount: number) {
-    const base = this.round2(amount / userIds.length);
-    const result = userIds.map((userId) => ({
-      userId,
+  private distributeEvenly(memberIds: string[], amount: number) {
+    const base = this.round2(amount / memberIds.length);
+    const result = memberIds.map((memberId) => ({
+      memberId,
       value: base,
     }));
     return this.fixRoundingDelta(result, amount);
   }
 
   private fixRoundingDelta(
-    items: Array<{ userId: string; value: number }>,
+    items: Array<{ memberId: string; value: number }>,
     amount: number,
   ) {
     if (!items.length) return [];

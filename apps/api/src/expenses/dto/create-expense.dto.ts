@@ -16,7 +16,7 @@ import { Currency, SplitType } from '../../database/entities';
 
 class ExpensePayerDto {
   @IsUUID('4')
-  userId!: string;
+  memberId!: string;
 
   @Type(() => Number)
   @IsNumber()
@@ -26,7 +26,7 @@ class ExpensePayerDto {
 
 class ExpenseSplitDto {
   @IsUUID('4')
-  userId!: string;
+  memberId!: string;
 
   @Type(() => Number)
   @IsNumber()

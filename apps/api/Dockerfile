@@ -14,6 +14,6 @@ RUN npm --prefix apps/api run build
 
 WORKDIR /app/apps/api
 
-EXPOSE 3001
+EXPOSE 3008
 
 CMD ["npm", "run", "start"]

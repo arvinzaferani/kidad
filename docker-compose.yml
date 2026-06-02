@@ -29,7 +29,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      PORT: 3001
+      PORT: 3008
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-https://kidad.ir}
       DATABASE_URL: postgres://whopaid:whopaid_secret@postgres:5432/whopaid
       DB_SYNCHRONIZE: "false"
@@ -45,7 +45,7 @@ services:
       SMTP_HELO_NAME: ${SMTP_HELO_NAME:-mail.kidad.ir}
     command: sh -c "npm run typeorm:migration:run && npm run start"
     ports:
-      - "3001:3001"
+      - "3008:3008"
 
   web:
     build:

@@ -13,6 +13,7 @@ import {
   Group,
   GroupInvitation,
   GroupMember,
+  GroupMemberMode,
   InboxMessage,
   InboxMessageType,
   InvitationStatus,
@@ -24,6 +25,7 @@ import { In, Repository } from 'typeorm';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
+import { CreateGuestMemberDto } from './dto/create-guest-member.dto';
 import { SettlementEngine } from '../domain/settlement/settlement.service';
 import { buildPaginated, toSkip } from '../common/pagination';
 
@@ -50,12 +52,14 @@ export class GroupsService {
 
   async findAll(userId?: string, page = 1, limit = 10) {
     let groupIds: string[] | null = null;
+    let membershipByGroup = new Map<string, GroupMember>();
 
     if (userId) {
       const memberships = await this.groupMembersRepository.find({
         where: { userId },
-        select: { groupId: true },
+        select: { id: true, groupId: true, userId: true },
       });
+      membershipByGroup = new Map(memberships.map((membership) => [membership.groupId, membership]));
       groupIds = memberships.map((membership) => membership.groupId);
       if (!groupIds.length) {
         return buildPaginated([], 0, page, limit);
@@ -76,11 +80,14 @@ export class GroupsService {
 
     const items = groups.map((group) => {
       const balances = balancesByGroup.get(group.id) ?? {};
-      const net = userId ? this.round2(balances[userId] ?? 0) : 0;
+      const currentMembership = membershipByGroup.get(group.id);
+      const net = currentMembership ? this.round2(balances[currentMembership.id] ?? 0) : 0;
       return {
         id: group.id,
         name: group.name,
         description: group.description,
+        imageUrl: group.imageUrl,
+        memberMode: group.memberMode,
         currency: group.currency,
         createdAt: group.createdAt,
         membersCount: group.members.length,
@@ -105,7 +112,12 @@ export class GroupsService {
       }
     }
 
-    const group = await this.groupsRepository.save(this.groupsRepository.create(rest));
+    const group = await this.groupsRepository.save(
+      this.groupsRepository.create({
+        ...rest,
+        memberMode: data.memberMode ?? GroupMemberMode.STANDARD,
+      }),
+    );
 
     if (creatorId) {
       await this.groupMembersRepository.save(
@@ -125,8 +137,14 @@ export class GroupsService {
       where: { id },
       relations: {
         members: { user: true },
-        expenses: { payers: true, splits: true },
-        settlements: true,
+        expenses: {
+          payers: { groupMember: { user: true } },
+          splits: { groupMember: { user: true } },
+        },
+        settlements: {
+          payerMember: { user: true },
+          receiverMember: { user: true },
+        },
       },
     });
 
@@ -139,39 +157,46 @@ export class GroupsService {
         id: expense.id,
         groupId: expense.groupId,
         payers: expense.payers.map((payer: ExpensePayer) => ({
-          userId: payer.userId,
+          userId: payer.groupMemberId,
           amount: Number(payer.amount),
         })),
         splits: expense.splits.map((split: ExpenseSplit) => ({
-          userId: split.userId,
+          userId: split.groupMemberId,
           value: Number(split.value),
         })),
       })),
     );
     this.applySettledSettlements(balanceMap, group.settlements);
 
+    const myMember = userId
+      ? group.members.find((member) => member.userId === userId)
+      : undefined;
+
     return {
       id: group.id,
       name: group.name,
       description: group.description,
+      imageUrl: group.imageUrl,
+      memberMode: group.memberMode,
       currency: group.currency,
       createdAt: group.createdAt,
-      mySettlement: userId
+      mySettlement: myMember
         ? {
-            amount: Math.abs(this.round2(balanceMap[userId] ?? 0)),
-            status: this.balanceStatus(this.round2(balanceMap[userId] ?? 0)),
+            amount: Math.abs(this.round2(balanceMap[myMember.id] ?? 0)),
+            status: this.balanceStatus(this.round2(balanceMap[myMember.id] ?? 0)),
           }
         : undefined,
       members: group.members.map((member) => {
-        const balance = this.round2(balanceMap[member.userId] ?? 0);
+        const balance = this.round2(balanceMap[member.id] ?? 0);
         return {
           id: member.id,
           userId: member.userId,
           isAdmin: member.isAdmin,
-          nickname: member.user.nickname,
-          email: member.user.email,
-          phone: member.user.phone,
-          avatarUrl: member.user.avatarUrl,
+          isGuest: !member.userId,
+          nickname: this.memberLabel(member),
+          email: member.user?.email ?? member.guestEmail,
+          phone: member.user?.phone ?? member.guestPhone,
+          avatarUrl: member.user?.avatarUrl,
           settlement: {
             amount: Math.abs(balance),
             status: this.balanceStatus(balance),
@@ -247,6 +272,45 @@ export class GroupsService {
     });
 
     return invitation;
+  }
+
+  async addGuestMember(groupId: string, data: CreateGuestMemberDto) {
+    const group = await this.groupsRepository.findOne({ where: { id: groupId } });
+    if (!group) {
+      throw new NotFoundException('Group not found');
+    }
+    if (group.memberMode !== GroupMemberMode.CREATOR_MANAGED) {
+      throw new BadRequestException('Guest members are only allowed in creator-managed groups');
+    }
+
+    if (!data.name.trim()) {
+      throw new BadRequestException('Guest name is required');
+    }
+
+    const member = await this.groupMembersRepository.save(
+      this.groupMembersRepository.create({
+        groupId,
+        guestName: data.name.trim(),
+        guestEmail: data.email?.trim().toLowerCase() || undefined,
+        guestPhone: data.phone?.trim() || undefined,
+        isAdmin: false,
+      }),
+    );
+
+    return {
+      id: member.id,
+      userId: member.userId,
+      isAdmin: member.isAdmin,
+      isGuest: true,
+      nickname: member.guestName,
+      email: member.guestEmail,
+      phone: member.guestPhone,
+      avatarUrl: undefined,
+      settlement: {
+        amount: 0,
+        status: 'CLEAR' as const,
+      },
+    };
   }
 
   async acceptInvitation(
@@ -431,10 +495,11 @@ export class GroupsService {
   }) {
     const members = await this.groupMembersRepository.find({
       where: { groupId: params.groupId },
+      select: { userId: true },
     });
 
     const recipients = new Set<string>([
-      ...members.map((member) => member.userId),
+      ...members.map((member) => member.userId).filter(Boolean) as string[],
       ...(params.extraRecipients ?? []),
     ]);
 
@@ -487,11 +552,11 @@ export class GroupsService {
           id: expense.id,
           groupId: expense.groupId,
           payers: expense.payers.map((payer: ExpensePayer) => ({
-            userId: payer.userId,
+            userId: payer.groupMemberId,
             amount: Number(payer.amount),
           })),
           splits: expense.splits.map((split: ExpenseSplit) => ({
-            userId: split.userId,
+            userId: split.groupMemberId,
             value: Number(split.value),
           })),
         })),
@@ -522,12 +587,14 @@ export class GroupsService {
       const amount = Number(settlement.amount);
       if (!Number.isFinite(amount) || amount <= 0) continue;
 
-      // payer sends money, so debt decreases (balance moves up);
-      // receiver gets money, so credit decreases (balance moves down).
-      balanceMap[settlement.payerId] =
-        (balanceMap[settlement.payerId] ?? 0) + amount;
-      balanceMap[settlement.receiverId] =
-        (balanceMap[settlement.receiverId] ?? 0) - amount;
+      balanceMap[settlement.payerMemberId] =
+        (balanceMap[settlement.payerMemberId] ?? 0) + amount;
+      balanceMap[settlement.receiverMemberId] =
+        (balanceMap[settlement.receiverMemberId] ?? 0) - amount;
     }
+  }
+
+  private memberLabel(member: GroupMember) {
+    return member.user?.nickname ?? member.guestName ?? 'عضو بدون نام';
   }
 }

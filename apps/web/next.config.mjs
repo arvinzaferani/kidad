@@ -4,7 +4,8 @@ import withPWA from 'next-pwa';
 const withPWAMiddleware = withPWA({
   dest: 'public',
   register: true,
-  skipWaiting: true
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
 });
 
 const baseConfig = {
@@ -12,5 +13,4 @@ const baseConfig = {
 };
 
 export default withPWAMiddleware(baseConfig);
-
 

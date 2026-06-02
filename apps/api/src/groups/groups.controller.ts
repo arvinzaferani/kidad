@@ -15,6 +15,7 @@ import { RespondInvitationDto } from './dto/respond-invitation.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { GroupsQueryDto } from './dto/groups-query.dto';
 import { AddFriendToGroupDto } from './dto/add-friend-to-group.dto';
+import { CreateGuestMemberDto } from './dto/create-guest-member.dto';
 
 @Controller('groups')
 export class GroupsController {
@@ -56,6 +57,14 @@ export class GroupsController {
     @Body() body: CreateInvitationDto,
   ) {
     return this.groupsService.invite(id, body);
+  }
+
+  @Post(':id/guest-members')
+  addGuestMember(
+    @Param('id') id: string,
+    @Body() body: CreateGuestMemberDto,
+  ) {
+    return this.groupsService.addGuestMember(id, body);
   }
 
   @Post(':id/invitations/:invitationId/accept')

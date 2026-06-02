@@ -4,40 +4,44 @@ import Link from 'next/link';
 import { ReactNode, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './theme-toggle';
-import { useAuthMe, useLogout } from '../../lib/auth/hooks';
+import { useLogout } from '../../lib/auth/hooks';
 import { getAuthToken } from '../../lib/auth/token';
 import {
   ChevronUpIcon,
   HomeIcon,
   InboxIcon,
+  ShieldIcon,
   UserIcon,
   UsersIcon,
 } from './icons';
+import { useAuthMe } from '../../lib/auth/hooks';
 
 interface AppShellProps {
   title: string;
   subtitle?: string;
+  headerImageUrl?: string;
+  headerImageAlt?: string;
   children: ReactNode;
 }
 
-export function AppShell({ title, subtitle, children }: AppShellProps) {
+export function AppShell({
+  title,
+  subtitle,
+  headerImageUrl,
+  headerImageAlt,
+  children,
+}: AppShellProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const draggedToOpen = useRef(false);
-  const verificationLockedRoutes = ['/dashboard', '/groups', '/friends', '/inbox', '/settings'];
   const centeredRoutes = ['/', '/login', '/verify-email', '/reset-password', '/email-login', '/verify-otp'];
-  const shouldEnforceVerification = verificationLockedRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
   const shouldCenterMain = centeredRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
-  const { data: me, isLoading: isMeLoading } = useAuthMe(shouldEnforceVerification);
   const logout = useLogout();
   const isLoggedIn = Boolean(getAuthToken());
-  const isVerificationBlocked =
-    shouldEnforceVerification && !!me?.email && !me.isEmailVerified;
+  const { data: me } = useAuthMe(isLoggedIn);
 
   const navItems = [
     { href: '/dashboard', label: 'داشبورد', icon: HomeIcon },
@@ -45,10 +49,23 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
     { href: '/friends', label: 'دوستان', icon: UsersIcon },
     { href: '/inbox', label: 'اینباکس', icon: InboxIcon },
     { href: '/profile', label: 'پروفایل', icon: UserIcon },
+    ...(me?.isAdmin ? [{ href: '/admin', label: 'ادمین', icon: ShieldIcon }] : []),
   ];
 
   return (<> <header className="app-header" role="banner">
     <div className="app-header-inner">
+      {headerImageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={headerImageUrl}
+          alt={headerImageAlt ?? title}
+          className="app-header-image"
+        />
+      ) : headerImageAlt ? (
+        <div className="app-header-image app-header-image-fallback" aria-hidden="true">
+          {headerImageAlt.slice(0, 1)}
+        </div>
+      ) : null}
       <div className="app-header-copy">
         <h1 className="page-title">{title}</h1>
         {subtitle ? <p className="subtitle">{subtitle}</p> : null}
@@ -61,9 +78,11 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
         رفتن به محتوا
       </a>
       <div className={`app-layout ${open ? 'sidebar-open' : ''}`}>
+        <div className="menu-handle">
+          </div>
         <button
           type="button"
-          className="bottom-menu-handle"
+          className={`bottom-menu-handle ${open ? 'bottom-menu-handle-open' : ''}`}
           onClick={() => {
             if (draggedToOpen.current) {
               draggedToOpen.current = false;
@@ -160,31 +179,7 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
           
 
           <section id="content" className="stack" aria-live="polite">
-            {isVerificationBlocked ? (
-              <article className="card">
-                <h2 className="card-title">نیاز به تایید ایمیل</h2>
-                <p style={{ margin: 0 }}>
-                  برای استفاده از این بخش‌ها باید ایمیل حساب تایید شود.
-                </p>
-                <p style={{ margin: '0.5rem 0 0' }}>
-                  به صفحه پروفایل برو و گزینه ارسال لینک تایید ایمیل را بزن.
-                </p>
-                <div className="grid-two" style={{ marginTop: '0.75rem' }}>
-                  <Link href="/profile" className="btn btn-primary">
-                    رفتن به پروفایل
-                  </Link>
-                  <Link href="/dashboard" className="btn btn-secondary">
-                    داشبورد
-                  </Link>
-                </div>
-              </article>
-            ) : shouldEnforceVerification && isMeLoading ? (
-              <article className="card">
-                <p style={{ margin: 0 }}>در حال بررسی وضعیت تایید ایمیل...</p>
-              </article>
-            ) : (
-              children
-            )}
+            {children}
           </section>
         </div>
       </div>
@@ -195,13 +190,17 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
 
 interface CardProps {
   title?: string;
+  headerAction?: ReactNode;
   children: ReactNode;
 }
 
-export function Card({ title, children }: CardProps) {
+export function Card({ title, headerAction, children }: CardProps) {
   return (
     <article className="card">
-      {title ? <h2 className="card-title">{title}</h2> : null}
+      <div className="card-header">
+        {title ? <h2 className="card-title">{title}</h2> : null}
+        {headerAction ?? null}
+      </div>
       {children}
     </article>
   );

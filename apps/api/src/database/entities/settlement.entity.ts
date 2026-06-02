@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Group } from './group.entity';
 import { User } from './user.entity';
+import { GroupMember } from './group-member.entity';
 import { SettlementMethod, SettlementStatus } from './enums';
 
 @Entity({ name: 'settlements' })
@@ -18,11 +19,17 @@ export class Settlement {
   @Column()
   groupId!: string;
 
-  @Column()
-  payerId!: string;
+  @Column({ nullable: true })
+  payerId?: string;
+
+  @Column({ nullable: true })
+  receiverId?: string;
 
   @Column()
-  receiverId!: string;
+  payerMemberId!: string;
+
+  @Column()
+  receiverMemberId!: string;
 
   @Column({ type: 'decimal', precision: 14, scale: 2 })
   amount!: string;
@@ -51,13 +58,27 @@ export class Settlement {
 
   @ManyToOne(() => User, (user: User) => user.settlementsOut, {
     onDelete: 'CASCADE',
+    nullable: true,
   })
   @JoinColumn({ name: 'payerId' })
-  payer!: User;
+  payer?: User;
 
   @ManyToOne(() => User, (user: User) => user.settlementsIn, {
     onDelete: 'CASCADE',
+    nullable: true,
   })
   @JoinColumn({ name: 'receiverId' })
-  receiver!: User;
+  receiver?: User;
+
+  @ManyToOne(() => GroupMember, (groupMember: GroupMember) => groupMember.outgoingSettlements, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'payerMemberId' })
+  payerMember!: GroupMember;
+
+  @ManyToOne(() => GroupMember, (groupMember: GroupMember) => groupMember.incomingSettlements, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'receiverMemberId' })
+  receiverMember!: GroupMember;
 }

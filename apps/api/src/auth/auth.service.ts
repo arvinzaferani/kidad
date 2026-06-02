@@ -57,27 +57,22 @@ export class AuthService {
       }
     }
 
+    const existingUsersCount = await this.usersRepository.count();
     const user = await this.usersRepository.save(
       this.usersRepository.create({
         email,
         phone: dto.phone,
-        isEmailVerified: false,
+        isEmailVerified: true,
+        isAdmin: existingUsersCount === 0,
         nickname: dto.nickname?.trim() || email.split('@')[0],
         passwordHash: hashPassword(dto.password),
       }),
     );
 
-    try {
-      await this.issueVerificationToken(user);
-    } catch (_error) {
-      throw new BadRequestException(
-        'ارسال ایمیل تایید ناموفق بود. لطفا دوباره تلاش کنید.',
-      );
-    }
-
     return {
       user: this.toSafeUser(user),
-      requiresEmailVerification: true,
+      token: this.createToken(user.id),
+      requiresEmailVerification: false,
     };
   }
 
@@ -89,12 +84,9 @@ export class AuthService {
     if (!user || !verifyPassword(dto.password, user.passwordHash)) {
       throw new UnauthorizedException('اطلاعات ورود نامعتبر است.');
     }
-    if (user.email && !user.isEmailVerified) {
-      throw new UnauthorizedException(
-        'ایمیل حساب تایید نشده است. ابتدا ایمیل تایید را انجام دهید.',
-      );
+    if (user.isBanned) {
+      throw new UnauthorizedException('حساب کاربری شما مسدود شده است.');
     }
-
     return {
       user: this.toSafeUser(user),
       token: this.createToken(user.id),
@@ -141,6 +133,9 @@ export class AuthService {
     const user = await this.usersRepository.findOne({ where: { id: dto.userId } });
     if (!user) {
       throw new NotFoundException('کاربر پیدا نشد.');
+    }
+    if (user.isBanned) {
+      throw new UnauthorizedException('حساب کاربری شما مسدود شده است.');
     }
 
     const usedAt = new Date();
@@ -304,6 +299,9 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('کاربر پیدا نشد.');
+    }
+    if (user.isBanned) {
+      throw new UnauthorizedException('حساب کاربری شما مسدود شده است.');
     }
 
     return this.toSafeUser(user);

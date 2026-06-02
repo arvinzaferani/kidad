@@ -34,11 +34,11 @@ export class BalancesService {
         id: expense.id,
         groupId: expense.groupId,
         payers: expense.payers.map((payer: ExpensePayer) => ({
-          userId: payer.userId,
+          userId: payer.groupMemberId,
           amount: Number(payer.amount),
         })),
         splits: expense.splits.map((split: ExpenseSplit) => ({
-          userId: split.userId,
+          userId: split.groupMemberId,
           value: Number(split.value),
         })),
       })),
@@ -55,11 +55,11 @@ export class BalancesService {
         id: expense.id,
         groupId: expense.groupId,
         payers: expense.payers.map((payer: ExpensePayer) => ({
-          userId: payer.userId,
+          userId: payer.groupMemberId,
           amount: Number(payer.amount),
         })),
         splits: expense.splits.map((split: ExpenseSplit) => ({
-          userId: split.userId,
+          userId: split.groupMemberId,
           value: Number(split.value),
         })),
       })),

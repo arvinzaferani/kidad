@@ -4,10 +4,10 @@ import { SettlementMethod, SettlementStatus } from '../../database/entities';
 
 export class CreateSettlementDto {
   @IsUUID('4')
-  payerId!: string;
+  payerMemberId!: string;
 
   @IsUUID('4')
-  receiverId!: string;
+  receiverMemberId!: string;
 
   @Type(() => Number)
   @IsNumber()

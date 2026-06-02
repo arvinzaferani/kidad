@@ -3,10 +3,9 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  IsUrl,
   MaxLength,
 } from 'class-validator';
-import { Currency } from '../../database/entities';
+import { Currency, GroupMemberMode } from '../../database/entities';
 
 export class CreateGroupDto {
   @IsString()
@@ -23,9 +22,13 @@ export class CreateGroupDto {
   description?: string;
 
   @IsOptional()
-  @IsUrl()
-  @MaxLength(1024)
+  @IsString()
+  @MaxLength(750000)
   imageUrl?: string;
+
+  @IsOptional()
+  @IsEnum(GroupMemberMode)
+  memberMode?: GroupMemberMode;
 
   @IsOptional()
   @IsUUID('4')

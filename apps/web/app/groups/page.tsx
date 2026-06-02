@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { AppShell, Card, Placeholder } from '../components/ui';
 import { getApiError, useAuthMe } from '../../lib/auth/hooks';
 import {
+  GroupMemberMode,
   GroupSummary,
   useCreateGroup,
   useGroups,
@@ -31,6 +32,34 @@ const settlementLabel = (group: GroupSummary) => {
   };
 };
 
+const resizeGroupImage = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('خواندن تصویر ناموفق بود.'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('فایل انتخاب‌شده تصویر معتبر نیست.'));
+      image.onload = () => {
+        const maxSide = 720;
+        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+
+        const context = canvas.getContext('2d');
+        if (!context) {
+          reject(new Error('آماده‌سازی تصویر ناموفق بود.'));
+          return;
+        }
+
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.78));
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+
 export default function GroupsPage() {
   const { showAlert } = useAlert();
   const { data: me } = useAuthMe();
@@ -42,6 +71,7 @@ export default function GroupsPage() {
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [groupImageUrl, setGroupImageUrl] = useState('');
+  const [memberMode, setMemberMode] = useState<GroupMemberMode>('STANDARD');
   const [error, setError] = useState<string | null>(null);
 
   const creating = createGroupMutation.isPending;
@@ -58,11 +88,13 @@ export default function GroupsPage() {
         description: groupDescription.trim() || undefined,
         currency: 'TOMAN',
         imageUrl: groupImageUrl.trim() || undefined,
+        memberMode,
         creatorId: me.id,
       });
       setGroupName('');
       setGroupDescription('');
       setGroupImageUrl('');
+      setMemberMode('STANDARD');
       setModalOpen(false);
       setPage(1);
       showAlert('گروه با موفقیت ایجاد شد.', 'success');
@@ -70,6 +102,21 @@ export default function GroupsPage() {
       const msg = getApiError(mutationError);
       setError(msg);
       showAlert(msg, 'error');
+    }
+  };
+
+  const onGroupImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setGroupImageUrl(await resizeGroupImage(file));
+    } catch (imageError) {
+      const msg = imageError instanceof Error ? imageError.message : 'انتخاب تصویر ناموفق بود.';
+      setError(msg);
+      showAlert(msg, 'error');
+    } finally {
+      event.target.value = '';
     }
   };
 
@@ -136,6 +183,11 @@ export default function GroupsPage() {
                     <span className={`settlement-pill ${label.className}`}>{label.text}</span>
                     <span className="group-card-members">{group.membersCount} عضو</span>
                   </div>
+                  {group.memberMode === 'CREATOR_MANAGED' ? (
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--accent)' }}>
+                      گروه مادرخرج / ثبت اعضای مهمان
+                    </p>
+                  ) : null}
                 </div>
               </Link>
             );
@@ -189,13 +241,53 @@ export default function GroupsPage() {
                 placeholder="مثلاً هزینه‌های سفر"
               />
 
-              <label className="label">تصویر گروه (URL)</label>
-              <input
-                className="field"
-                value={groupImageUrl}
-                onChange={(event) => setGroupImageUrl(event.target.value)}
-                placeholder="https://..."
-              />
+              <label className="label">تصویر گروه</label>
+              <label className="image-upload-box">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="image-upload-input"
+                  onChange={onGroupImageChange}
+                />
+                <span className="image-upload-preview">
+                  {groupImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={groupImageUrl} alt="پیش‌نمایش تصویر گروه" />
+                  ) : (
+                    <span>+</span>
+                  )}
+                </span>
+                <span className="image-upload-copy">
+                  <strong>انتخاب تصویر</strong>
+                  <small>یک تصویر از دستگاهت انتخاب کن؛ پیش‌نمایش همین‌جا نمایش داده می‌شود.</small>
+                </span>
+              </label>
+              {groupImageUrl ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setGroupImageUrl('')}
+                >
+                  حذف تصویر
+                </button>
+              ) : null}
+
+              <label className="creator-mode-toggle">
+                <input
+                  type="checkbox"
+                  checked={memberMode === 'CREATOR_MANAGED'}
+                  onChange={(event) =>
+                    setMemberMode(event.target.checked ? 'CREATOR_MANAGED' : 'STANDARD')
+                  }
+                />
+                <span>
+                  <strong>گروه مادرخرج</strong>
+                  <small>اعضای بدون ثبت‌نام هم بتوانند داخل گروه ثبت شوند.</small>
+                </span>
+              </label>
+              <p style={{ margin: '-0.5rem 0 0', fontSize: '0.8rem', opacity: 0.7 }}>
+                در حالت مادرخرج، شما می‌توانی اعضا را فقط با نام و شماره یا ایمیل اختیاری ثبت کنی.
+              </p>
 
               <button type="submit" className="btn btn-primary" disabled={creating}>
                 {creating ? 'در حال ساخت...' : 'ایجاد گروه'}

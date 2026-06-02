@@ -24,6 +24,12 @@ export class User {
   @Column({ default: true })
   isEmailVerified!: boolean;
 
+  @Column({ default: false })
+  isAdmin!: boolean;
+
+  @Column({ default: false })
+  isBanned!: boolean;
+
   @Column()
   passwordHash!: string;
 

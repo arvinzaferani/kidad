@@ -2,7 +2,6 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  IsUrl,
   MaxLength,
 } from 'class-validator';
 import { Currency } from '../../database/entities';
@@ -23,7 +22,7 @@ export class UpdateGroupDto {
   description?: string;
 
   @IsOptional()
-  @IsUrl()
-  @MaxLength(1024)
+  @IsString()
+  @MaxLength(750000)
   imageUrl?: string;
 }

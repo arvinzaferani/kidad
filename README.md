@@ -235,7 +235,7 @@ Run on VPS:
    - `docker compose up -d --build`
 4. App URLs:
    - Web: `http://<SERVER_IP>:3000`
-   - API: `http://<SERVER_IP>:3001/api`
+   - API: `http://<SERVER_IP>:3008/api`
 
 Notes:
 - API container runs migrations at startup.

@@ -228,11 +228,40 @@ export function useCreateExpense() {
       const { data } = await apiClient.post(`/groups/${groupId}/expenses`, body);
       return data;
     },
-    onSuccess: async (_, payload) => {
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: ['group', payload.groupId] });
+      const previous = queryClient.getQueryData<GroupDetail>(['group', payload.groupId]);
+      return { previous };
+    },
+    onError: (_, payload, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['group', payload.groupId], context.previous);
+      }
+    },
+    onSettled: async (_, __, payload) => {
       await queryClient.invalidateQueries({ queryKey: ['group', payload.groupId] });
       await queryClient.invalidateQueries({ queryKey: ['groups'] });
       await queryClient.invalidateQueries({ queryKey: ['inbox'] });
     },
+  });
+}
+
+export interface SettlementSuggestion {
+  from: string;
+  to: string;
+  amount: number;
+}
+
+export function useSettlementSuggestions(groupId?: string) {
+  return useQuery({
+    queryKey: ['settlement-suggestions', groupId],
+    queryFn: async () => {
+      const { data } = await apiClient.post<SettlementSuggestion[]>(
+        `/groups/${groupId}/settlements/suggest`,
+      );
+      return data;
+    },
+    enabled: Boolean(groupId),
   });
 }
 

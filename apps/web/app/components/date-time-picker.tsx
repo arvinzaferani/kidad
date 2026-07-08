@@ -288,10 +288,10 @@ export function PersianDateTimePicker({
             )}
           </div>
 
-          <label className="persian-picker-time ">
+          <label className="persian-picker-time">
             <span>ساعت</span>
             <input
-              className="field "
+              className="field"
               type="time"
               value={`${pad2(parts.hour)}:${pad2(parts.minute)}`}
               onChange={(event) => {

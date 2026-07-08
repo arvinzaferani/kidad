@@ -105,3 +105,28 @@ export function ChevronUpIcon(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </BaseIcon>
+  );
+}
+
+export function ArrowLeftIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </BaseIcon>
+  );
+}
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </BaseIcon>
+  );
+}

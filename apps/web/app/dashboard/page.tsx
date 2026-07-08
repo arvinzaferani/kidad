@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { AppShell, Card, Placeholder } from '../components/ui';
+import { StaggerItem } from '../components/page-transition';
 import { useAuthMe, useLogout } from '../../lib/auth/hooks';
 import { useInbox } from '../../lib/inbox/hooks';
 import { useGroups } from '../../lib/groups/hooks';
@@ -108,8 +109,8 @@ export default function DashboardPage() {
           <Placeholder label="هنوز فعالیتی ثبت نشده است." />
         ) : null}
         <div className="stack">
-          {(recentActivity?.items ?? []).map((item) => (
-            <div key={`${item.source}-${item.id}`} className="card" style={{ marginTop: '0.75rem' }}>
+          {(recentActivity?.items ?? []).map((item, i) => (
+            <StaggerItem key={`${item.source}-${item.id}`} index={i} className="card" style={{ marginTop: '0.75rem' }}>
               <p style={{ margin: 0 }}>{item.message}</p>
               <p style={{ margin: '0.35rem 0 0', opacity: 0.7, fontSize: '0.85rem' }}>
                 {new Date(item.createdAt).toLocaleString('fa-IR')}
@@ -122,7 +123,7 @@ export default function DashboardPage() {
                   {item.groupName ? `گروه: ${item.groupName}` : 'مشاهده گروه'}
                 </Link>
               ) : null}
-            </div>
+            </StaggerItem>
           ))}
         </div>
       </Card>

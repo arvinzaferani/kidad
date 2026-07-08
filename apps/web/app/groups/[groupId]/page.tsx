@@ -1,8 +1,10 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useRef, useState } from 'react';
 import { AppShell, Card, Placeholder } from '../../components/ui';
 import { PersianDateTimePicker } from '../../components/date-time-picker';
+import { PlusIcon, ClockIcon } from '../../components/icons';
+import { StaggerItem } from '../../components/page-transition';
 import { getApiError, useAuthMe } from '../../../lib/auth/hooks';
 import {
   CreateSettlementPayload,
@@ -17,9 +19,11 @@ import {
   useInviteToGroup,
   useSettleSettlement,
   useSettlements,
+  useSettlementSuggestions,
 } from '../../../lib/groups/hooks';
 import { useFriends } from '../../../lib/friends/hooks';
 import { useAlert } from '../../providers/alert-provider';
+import { ArrowRight, ArrowRightLeft, Users } from 'lucide-react';
 
 interface GroupPageProps {
   params: { groupId: string };
@@ -31,6 +35,13 @@ const splitTypes: Array<{ value: SplitType; label: string }> = [
   { value: 'PERCENT', label: 'درصدی' },
   { value: 'SHARE', label: 'سهمی' },
 ];
+
+const splitTypeLabels: Record<SplitType, string> = {
+  EQUAL: 'مساوی',
+  EXACT: 'دقیق',
+  PERCENT: 'درصدی',
+  SHARE: 'سهمی',
+};
 
 const formatMoney = (value: number, currency: 'TOMAN' | 'RIAL') =>
   `${new Intl.NumberFormat('fa-IR').format(Math.round(value))} ${currency === 'TOMAN' ? 'تومان' : 'ریال'}`;
@@ -87,6 +98,10 @@ function getSettlementBadge(member: GroupMemberSummary, currency: 'TOMAN' | 'RIA
   );
 }
 
+function getMemberName(members: GroupMemberSummary[], memberId: string) {
+  return members.find((m) => m.id === memberId)?.nickname ?? 'کاربر';
+}
+
 export default function GroupPage({ params }: GroupPageProps) {
   const { showAlert } = useAlert();
   const { data: me } = useAuthMe();
@@ -101,6 +116,8 @@ export default function GroupPage({ params }: GroupPageProps) {
   const [settlementsPage, setSettlementsPage] = useState(1);
   const [friendPicker, setFriendPicker] = useState('');
   const [friendModalOpen, setFriendModalOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const { data: settlements } = useSettlements(params.groupId, settlementsPage, 8);
   const { data: expenses } = useGroupExpenses(params.groupId, expensesPage, 8);
   const { data: friends, isError: isFriendsError } = useFriends(me?.id, 1, 100);
@@ -220,9 +237,9 @@ export default function GroupPage({ params }: GroupPageProps) {
       splitType === 'EQUAL'
         ? selectedMemberIds.map((memberId) => ({ memberId, value: 1 }))
         : selectedMemberIds.map((memberId) => ({
-            memberId,
-            value: parseNumericInput(memberValues[memberId] || ''),
-          }));
+          memberId,
+          value: parseNumericInput(memberValues[memberId] || ''),
+        }));
 
     if (splitType !== 'EQUAL' && splits.some((split) => split.value <= 0 || !Number.isFinite(split.value))) {
       setFormError('برای نوع تقسیم انتخابی، مقدار معتبر برای همه اعضا وارد کن.');
@@ -461,7 +478,49 @@ export default function GroupPage({ params }: GroupPageProps) {
           </div>
         </div>
       ) : null}
+      {group && myMember ? (
+        <div className="balance-hero">
+          <div className="balance-hero-total">
+            <p className="balance-hero-label">وضعیت شما در این گروه</p>
+            <p className={`balance-hero-amount ${myMember.settlement.status === 'DEBIT' ? 'balance-hero-debit' :
+                myMember.settlement.status === 'CREDIT' ? 'balance-hero-credit' :
+                  'balance-hero-clear'
+              }`}>
+              {myMember.settlement.status === 'DEBIT' ? 'بدهی: ' :
+                myMember.settlement.status === 'CREDIT' ? 'طلبی: ' :
+                  'تسویه‌شده: '}
+              {formatMoney(myMember.settlement.amount, group.currency)}
+            </p>
+          </div>
+          <div className="balance-hero-detail">
+            <div className="stat-item">
+              <p className="stat-label">کل بدهی</p>
+              <p className="stat-value stat-debit">
+                {formatMoney(
+                  members
+                    .filter((m) => m.settlement.status === 'DEBIT')
+                    .reduce((sum, m) => sum + m.settlement.amount, 0),
+                  group.currency,
+                )}
+              </p>
+            </div>
+            <div className="stat-item">
+              <p className="stat-label">کل طلب</p>
+              <p className="stat-value stat-credit">
+                {formatMoney(
+                  members
+                    .filter((m) => m.settlement.status === 'CREDIT')
+                    .reduce((sum, m) => sum + m.settlement.amount, 0),
+                  group.currency,
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <Card
+      icon={    <Users />      }
         title="اعضا و مانده هر نفر"
         headerAction={
           group ? (
@@ -471,17 +530,23 @@ export default function GroupPage({ params }: GroupPageProps) {
               onClick={() => setFriendModalOpen(true)}
               disabled={isFriendsError}
             >
-              +
+              افزودن عضو +
             </button>
           ) : null
         }
       >
-        {isLoading ? <p style={{ margin: 0 }}>در حال بارگذاری...</p> : null}
+        {isLoading ? (
+          <div className="stack">
+            <div className="skeleton skeleton-member" />
+            <div className="skeleton skeleton-member" />
+            <div className="skeleton skeleton-member" />
+          </div>
+        ) : null}
         {isError ? <p style={{ margin: 0, color: '#dc2626' }}>خواندن گروه ناموفق بود.</p> : null}
         {!isLoading && !members.length ? <Placeholder label="هنوز عضوی در این گروه نیست." /> : null}
         <div className="member-list">
-          {members.map((member) => (
-            <div key={member.id} className="member-row">
+          {members.map((member, i) => (
+            <StaggerItem key={member.id} index={i} className="member-row">
               <div className="member-main">
                 <div className="members-cred">
                   <div className="member-avatar">
@@ -514,18 +579,23 @@ export default function GroupPage({ params }: GroupPageProps) {
                 </div>
               </div>
               {group ? getSettlementBadge(member, group.currency) : null}
-            </div>
+            </StaggerItem>
           ))}
         </div>
       </Card>
 
-      <Card title="پرداخت‌ها و تسویه‌ها">
-        {!settlements?.items.length ? (
+      <Card title="پرداخت‌ها و تسویه‌ها" icon={<ArrowRightLeft/>}>
+        {isLoading ? (
+          <div className="stack">
+            <div className="skeleton skeleton-card" />
+            <div className="skeleton skeleton-card" />
+          </div>
+        ) : !settlements?.items.length ? (
           <Placeholder label="هنوز تسویه‌ای ثبت نشده." />
         ) : (
           <div className="stack">
-            {settlements.items.map((item) => (
-              <div key={item.id} className="expense-row">
+            {settlements.items.map((item, i) => (
+              <StaggerItem key={item.id} index={i} className="expense-row">
                 <p className="expense-title">
                   {item.payer?.nickname || item.payerMemberId} ← {item.receiver?.nickname || item.receiverMemberId}
                 </p>
@@ -543,7 +613,7 @@ export default function GroupPage({ params }: GroupPageProps) {
                     پرداخت شد
                   </button>
                 ) : null}
-              </div>
+              </StaggerItem>
             ))}
           </div>
         )}
@@ -567,132 +637,182 @@ export default function GroupPage({ params }: GroupPageProps) {
         </div>
       </Card>
 
-      <Card title="ثبت هزینه جدید">
-        {group ? (
-          <form onSubmit={onAddExpense} className="stack">
-            <label className="label">عنوان هزینه</label>
-            <input
-              className="field"
-              value={expenseDescription}
-              onChange={(event) => setExpenseDescription(event.target.value)}
-              placeholder="مثلاً خرید مواد غذایی"
-              required
-            />
-
-            <label className="label">مبلغ</label>
-            <input
-              className="field"
-              value={expenseAmount}
-              onChange={(event) => setExpenseAmount(formatNumericInput(event.target.value))}
-              type="text"
-              inputMode="decimal"
-              placeholder="مثلاً 1,250,000"
-              required
-            />
-            <p style={{ margin: '-0.5rem 0 0', fontSize: '0.8rem', opacity: 0.7 }}>
-              واحد پیش‌فرض: {group.currency === 'TOMAN' ? 'تومان' : 'ریال'}
-            </p>
-
-            <div className="stack">
-              <PersianDateTimePicker
-                id="expense-datetime"
-                label="تاریخ و زمان هزینه"
-                value={expenseDateTime}
-                onChange={setExpenseDateTime}
+      {quickAddOpen && group ? (
+        <div className="bottom-sheet-root" role="dialog" aria-modal="true" aria-labelledby="quick-add-title">
+          <button
+            type="button"
+            className="bottom-sheet-backdrop"
+            aria-label="بستن"
+            onClick={() => setQuickAddOpen(false)}
+          />
+          <div className="bottom-sheet">
+            <div className="bottom-sheet-handle" />
+            <h2 id="quick-add-title" className="bottom-sheet-title">هزینه جدید</h2>
+            <form ref={formRef} onSubmit={onAddExpense} className="stack">
+              <label className="label">عنوان هزینه</label>
+              <input
+                className="field"
+                value={expenseDescription}
+                onChange={(event) => setExpenseDescription(event.target.value)}
+                placeholder="مثلاً خرید مواد غذایی"
                 required
               />
-            </div>
 
-            <label className="label">چه کسی پرداخت کرد؟</label>
-            <select
-              className="field"
-              value={paidBy}
-              onChange={(event) => setPaidBy(event.target.value)}
-              required
-            >
-              <option value="">انتخاب کن</option>
-              {members.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.nickname}
-                </option>
-              ))}
-            </select>
+              <label className="label">مبلغ</label>
+              <input
+                className="field"
+                value={expenseAmount}
+                onChange={(event) => setExpenseAmount(formatNumericInput(event.target.value))}
+                type="text"
+                inputMode="decimal"
+                placeholder="مثلاً 1,250,000"
+                required
+              />
+              <p style={{ margin: '-0.5rem 0 0', fontSize: '0.8rem', opacity: 0.7 }}>
+                واحد: {group.currency === 'TOMAN' ? 'تومان' : 'ریال'}
+              </p>
 
-            <label className="label">روش تقسیم</label>
-            <select
-              className="field"
-              value={splitType}
-              onChange={(event) => setSplitType(event.target.value as SplitType)}
-            >
-              {splitTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
+              <div className="stack">
+                <PersianDateTimePicker
+                  id="expense-datetime"
+                  label="تاریخ و زمان"
+                  value={expenseDateTime}
+                  onChange={setExpenseDateTime}
+                  required
+                />
+              </div>
 
-            <div className="split-grid">
-              {members.map((member) => {
-                const selected = selectedMemberIds.includes(member.id);
-                return (
-                  <div key={member.id} className="split-row">
-                    <label className="split-check">
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => onToggleMember(member.id)}
-                      />
-                      <span>{member.nickname}</span>
-                    </label>
-                    {splitType !== 'EQUAL' && selected ? (
-                      <input
-                        className="field split-value"
-                        type="text"
-                        inputMode="decimal"
-                        value={memberValues[member.id] || ''}
-                        onChange={(event) =>
-                          setMemberValues((prev) => ({
-                            ...prev,
-                            [member.id]: formatNumericInput(event.target.value),
-                          }))
-                        }
-                        placeholder={
-                          splitType === 'PERCENT'
-                            ? 'درصد'
-                            : splitType === 'SHARE'
-                              ? 'سهم'
-                              : 'مبلغ'
-                        }
-                      />
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
+              <label className="label">چه کسی پرداخت کرد؟</label>
+              <select
+                className="field"
+                value={paidBy}
+                onChange={(event) => setPaidBy(event.target.value)}
+                required
+              >
+                <option value="">انتخاب کن</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.nickname}
+                  </option>
+                ))}
+              </select>
 
-            <button type="submit" className="btn btn-primary" disabled={createExpenseMutation.isPending}>
-              {createExpenseMutation.isPending ? 'در حال ثبت...' : 'ثبت هزینه'}
-            </button>
-          </form>
-        ) : (
-          <Placeholder label="ابتدا گروه بارگذاری شود." />
-        )}
-      </Card>
+              <label className="label">روش تقسیم</label>
+              <select
+                className="field"
+                value={splitType}
+                onChange={(event) => setSplitType(event.target.value as SplitType)}
+              >
+                {splitTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
 
-      <Card title="آخرین هزینه‌ها">
-        {!expenses?.items.length ? (
+              <div className="split-grid">
+                {members.map((member) => {
+                  const selected = selectedMemberIds.includes(member.id);
+                  return (
+                    <div key={member.id} className="split-row">
+                      <label className="split-check">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => onToggleMember(member.id)}
+                        />
+                        <span>{member.nickname}</span>
+                      </label>
+                      {splitType !== 'EQUAL' && selected ? (
+                        <input
+                          className="field split-value"
+                          type="text"
+                          inputMode="decimal"
+                          value={memberValues[member.id] || ''}
+                          onChange={(event) =>
+                            setMemberValues((prev) => ({
+                              ...prev,
+                              [member.id]: formatNumericInput(event.target.value),
+                            }))
+                          }
+                          placeholder={
+                            splitType === 'PERCENT'
+                              ? 'درصد'
+                              : splitType === 'SHARE'
+                                ? 'سهم'
+                                : 'مبلغ'
+                          }
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="grid-two">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setQuickAddOpen(false)}
+                >
+                  انصراف
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={createExpenseMutation.isPending}>
+                  {createExpenseMutation.isPending ? 'در حال ثبت...' : 'ثبت هزینه'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      <Card title="آخرین هزینه‌ها" headerAction={
+        <button
+          type="button"
+          className="btn btn-secondary member-settle-btn"
+          onClick={() => setQuickAddOpen(true)}
+        >
+          افزودن هزینه +
+        </button>
+      }>
+        {isLoading ? (
+          <div className="stack">
+            <div className="skeleton skeleton-card" />
+            <div className="skeleton skeleton-card" />
+            <div className="skeleton skeleton-card" />
+          </div>
+        ) : !expenses?.items.length ? (
           <Placeholder label="هنوز هزینه‌ای ثبت نشده." />
         ) : (
           <div className="stack">
-            {expenses.items.map((expense) => (
-              <div key={expense.id} className="expense-row">
-                <p className="expense-title">{expense.description}</p>
-                <p className="expense-sub">
-                  {formatMoney(Number(expense.amount), expense.currency)} -{' '}
-                  {new Date(expense.date).toLocaleDateString('fa-IR-u-ca-persian')}
-                </p>
-              </div>
-            ))}
+            {expenses.items.map((expense, i) => {
+              const payerNames = expense.payers
+                .map((p) => getMemberName(members, p.groupMemberId))
+                .join(' و ');
+              const splitCount = expense.splits.length;
+              const splitLabel =
+                splitCount === 1 ? 'خودش' :
+                  splitTypeLabels[expense.splitType] ?? `${splitCount} نفر`;
+
+              return (
+                <StaggerItem key={expense.id} index={i} className="expense-story">
+                  <p className="expense-story-text">
+                    <span className="expense-story-payer">{payerNames}</span>
+                    {' '}
+                    <span className="expense-story-amount">{formatMoney(Number(expense.amount), expense.currency)}</span>
+                    {' '}برای <strong>{expense.description}</strong> پرداخت کرد.
+                    {' '}تقسیم {splitLabel === 'خودش' ? 'نشده' : `به ${splitLabel === 'مساوی' ? `صورت ${splitLabel}` : `روش ${splitLabel}`} بین ${splitCount} نفر`}.
+                  </p>
+                  <div className="expense-story-meta">
+                    <ClockIcon size={12} />
+                    <span>{new Date(expense.date).toLocaleDateString('fa-IR-u-ca-persian')}</span>
+                    {expense.payers.length > 1 ? (
+                      <span>• {expense.payers.length} پرداخت‌کننده</span>
+                    ) : null}
+                  </div>
+                </StaggerItem>
+              );
+            })}
           </div>
         )}
         <div className="grid-two" style={{ marginTop: '0.75rem' }}>

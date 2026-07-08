@@ -73,13 +73,13 @@ export function AppShell({
     </div>
   </header>
     <main className="app-shell" id="top">
-       
+
       <a href="#content" className="skip-link">
         رفتن به محتوا
       </a>
       <div className={`app-layout ${open ? 'sidebar-open' : ''}`}>
         <div className="menu-handle">
-          </div>
+        </div>
         <button
           type="button"
           className={`bottom-menu-handle ${open ? 'bottom-menu-handle-open' : ''}`}
@@ -174,31 +174,33 @@ export function AppShell({
             ) : null}
           </div>
         </div>
-       
-        <div className={`app-main ${shouldCenterMain ? 'app-main-centered' : ''}`}>
-          
 
-          <section id="content" className="stack" aria-live="polite">
+        <div className={`app-main ${shouldCenterMain ? 'app-main-centered' : ''}`}>
+          <section id="content" className="stack page-enter" aria-live="polite">
             {children}
           </section>
         </div>
       </div>
     </main>
-    </>
+  </>
   );
 }
 
 interface CardProps {
   title?: string;
   headerAction?: ReactNode;
+  icon?: ReactNode;
   children: ReactNode;
 }
 
-export function Card({ title, headerAction, children }: CardProps) {
+export function Card({ title, headerAction, children, icon }: CardProps) {
   return (
     <article className="card">
       <div className="card-header">
-        {title ? <h2 className="card-title">{title}</h2> : null}
+        <div className="card-title-parent">
+          {icon}
+          {title ? <h2 className="card-title">{title}</h2> : null}
+        </div>
         {headerAction ?? null}
       </div>
       {children}

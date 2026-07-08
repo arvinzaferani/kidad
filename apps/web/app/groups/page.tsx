@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { AppShell, Card, Placeholder } from '../components/ui';
+import { StaggerItem } from '../components/page-transition';
 import { getApiError, useAuthMe } from '../../lib/auth/hooks';
 import {
   GroupMemberMode,
@@ -160,10 +161,11 @@ export default function GroupsPage() {
         ) : null}
 
         <div className="group-list">
-          {sortedGroups.map((group) => {
+          {sortedGroups.map((group, i) => {
             const label = settlementLabel(group);
             return (
-              <Link key={group.id} href={`/groups/${group.id}`} className="group-card">
+              <StaggerItem key={group.id} index={i}>
+              <Link href={`/groups/${group.id}`} className="group-card">
                 <div className="group-card-image-wrap">
                   {group.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -190,6 +192,7 @@ export default function GroupsPage() {
                   ) : null}
                 </div>
               </Link>
+              </StaggerItem>
             );
           })}
         </div>

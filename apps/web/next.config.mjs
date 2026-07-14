@@ -9,7 +9,8 @@ const withPWAMiddleware = withPWA({
 });
 
 const baseConfig = {
-  reactStrictMode: true
+  reactStrictMode: true,
+  output: 'standalone',
 };
 
 export default withPWAMiddleware(baseConfig);

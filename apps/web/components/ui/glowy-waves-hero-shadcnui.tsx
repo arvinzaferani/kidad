@@ -74,24 +74,25 @@ export function GlowyWavesHero() {
     let animationId: number;
     let time = 0;
 
+    const colorResolverEl = document.createElement('div');
+    colorResolverEl.style.position = 'absolute';
+    colorResolverEl.style.visibility = 'hidden';
+    colorResolverEl.style.width = '1px';
+    colorResolverEl.style.height = '1px';
+    document.body.appendChild(colorResolverEl);
+
     const computeThemeColors = () => {
       const rootStyles = getComputedStyle(document.documentElement);
 
       const resolveColor = (variables: string[], alpha = 1) => {
-        const tempEl = document.createElement('div');
-        tempEl.style.position = 'absolute';
-        tempEl.style.visibility = 'hidden';
-        tempEl.style.width = '1px';
-        tempEl.style.height = '1px';
-        document.body.appendChild(tempEl);
-
         let color = `rgba(255, 255, 255, ${alpha})`;
 
         for (const variable of variables) {
           const value = rootStyles.getPropertyValue(variable).trim();
           if (value) {
-            tempEl.style.backgroundColor = `var(${variable})`;
-            const computedColor = getComputedStyle(tempEl).backgroundColor;
+            colorResolverEl.style.backgroundColor = '';
+            colorResolverEl.style.backgroundColor = `var(${variable})`;
+            const computedColor = getComputedStyle(colorResolverEl).backgroundColor;
             if (computedColor && computedColor !== 'rgba(0, 0, 0, 0)') {
               if (alpha < 1) {
                 const rgbMatch = computedColor.match(
@@ -110,7 +111,6 @@ export function GlowyWavesHero() {
           }
         }
 
-        document.body.removeChild(tempEl);
         return color;
       };
 
@@ -278,6 +278,7 @@ export function GlowyWavesHero() {
       window.removeEventListener('mouseleave', handleMouseLeave);
       cancelAnimationFrame(animationId);
       observer.disconnect();
+      colorResolverEl.remove();
     };
   }, []);
 

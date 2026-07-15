@@ -14,10 +14,6 @@ RUN npm --prefix apps/web run build
 
 WORKDIR /app/apps/web
 
-# Copy static assets and public into the standalone output
-RUN cp -r public .next/standalone/public && \
-    cp -r .next/static .next/standalone/.next/static
-
 EXPOSE 3000
 
-CMD ["node", ".next/standalone/server.js"]
+CMD ["npm", "run", "start"]

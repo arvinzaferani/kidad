@@ -11,8 +11,63 @@ concurrency:
   group: kidad-production
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: tag
+        run: echo "tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-api:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ github.repository }}-api:latest
+          cache-from: type=gha,scope=kidad-api
+          cache-to: type=gha,mode=max,scope=kidad-api
+
+      - name: Build and push Web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-web:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ github.repository }}-web:latest
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=https://api.kidad.ir
+          cache-from: type=gha,scope=kidad-web
+          cache-to: type=gha,mode=max,scope=kidad-web
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -27,4 +82,4 @@ jobs:
             cd /opt/kidad
             git fetch origin main
             git reset --hard origin/main
-            bash deploy.sh
+            IMAGE_TAG=${{ needs.build.outputs.image_tag }} bash deploy.sh

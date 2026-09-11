@@ -22,6 +22,7 @@ services:
       - internal
 
   api:
+    image: ghcr.io/arvinzaferani/kidad-api:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -62,6 +63,7 @@ services:
       - proxy
 
   web:
+    image: ghcr.io/arvinzaferani/kidad-web:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: apps/web/Dockerfile

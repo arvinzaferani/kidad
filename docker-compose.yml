@@ -68,7 +68,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.kidad.ir}
+NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.kidad.ir/api}
 
     container_name: whopaid-web
     restart: unless-stopped
@@ -77,7 +77,7 @@ services:
       - api
 
     environment:
-      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.kidad.ir}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.kidad.ir/api}
       NODE_ENV: production
 
     networks:

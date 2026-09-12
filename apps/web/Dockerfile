@@ -2,7 +2,7 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
-ARG NEXT_PUBLIC_API_BASE_URL=https://api.kidad.ir
+ARG NEXT_PUBLIC_API_BASE_URL=https://api.kidad.ir/api
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 
 COPY package.json package-lock.json ./

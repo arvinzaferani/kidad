@@ -62,7 +62,7 @@ jobs:
             ghcr.io/${{ github.repository }}-web:${{ steps.tag.outputs.tag }}
             ghcr.io/${{ github.repository }}-web:latest
           build-args: |
-            NEXT_PUBLIC_API_BASE_URL=https://api.kidad.ir
+            NEXT_PUBLIC_API_BASE_URL=https://api.kidad.ir/api
           cache-from: type=gha,scope=kidad-web
           cache-to: type=gha,mode=max,scope=kidad-web
 

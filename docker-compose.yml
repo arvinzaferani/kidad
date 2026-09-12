@@ -68,8 +68,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.kidad.ir/api}
-
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.kidad.ir/api}
+ 
     container_name: whopaid-web
     restart: unless-stopped
 

@@ -5,9 +5,9 @@ services:
     restart: unless-stopped
 
     environment:
-      POSTGRES_DB: whopaid
-      POSTGRES_USER: whopaid
-      POSTGRES_PASSWORD: whopaid_secret
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
     volumes:
       - pgdata:/var/lib/postgresql/data

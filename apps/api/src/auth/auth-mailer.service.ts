@@ -1,17 +1,113 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { randomBytes } from 'crypto';
-import { Socket } from 'net';
+import * as nodemailer from 'nodemailer';
+import { EmailConfig, loadEmailConfig, validateEmailConfig } from '../config/email.config';
 
+export interface SendEmailParams {
+  to: string;
+  subject: string;
+  html: string;
+  /** Plain-text fallback; derived from html when omitted. */
+  text?: string;
+  /** Optional per-message sender override. */
+  from?: string;
+}
+
+interface SendMailPayload {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}
+
+interface SentMailInfo {
+  messageId?: string;
+  envelope?: unknown;
+  message?: unknown;
+}
+
+interface EmailTransport {
+  sendMail(options: SendMailPayload): Promise<SentMailInfo>;
+}
+
+function toPlainText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n+/g, '\n\n')
+    .trim();
+}
+
+function mapEmailError(error: unknown): Error {
+  const cause = error instanceof Error ? error : new Error(String(error));
+  const candidate = error as {
+    code?: string;
+    responseCode?: number | string;
+    response?: string;
+    message?: string;
+  };
+
+  const code = candidate?.code ?? '';
+  const response = String(candidate?.response ?? '');
+  const responseCode = String(candidate?.responseCode ?? '');
+  const detail = `${code} ${responseCode} ${response}`;
+
+  let message = 'Failed to send email';
+  if (/getaddrinfo|ENOTFOUND|ECONNREFUSED|ECONNRESET|ESOCKET|EHOSTUNREACH|EPIPE/i.test(detail)) {
+    message = 'SMTP server unavailable';
+  } else if (/ETIMEDOUT|TIMEOUT|greeting/i.test(detail)) {
+    message = 'SMTP connection timeout';
+  } else if (/^5\d\d/.test(responseCode) || /recipient|rejected|relay/i.test(detail)) {
+    message = 'SMTP rejected recipient';
+  } else if (/^4\d\d/.test(responseCode) || /temporary/i.test(detail)) {
+    message = 'SMTP server rejected the request temporarily';
+  } else if (/530|535|authentication|auth/i.test(detail)) {
+    message = 'SMTP authentication failed';
+  }
+
+  const wrapped = new Error(message);
+  (wrapped as { cause?: unknown }).cause = cause;
+  return wrapped;
+}
+
+/**
+ * Central email service. All transactional email (verification, password
+ * reset, magic login, inbox notifications) flows through {@link send}.
+ *
+ * SMTP: one transport per process, plain SMTP on port 25 with the configured
+ * HELO name. Opportunistic STARTTLS and DKIM signing are handled by the
+ * host-level Postfix; the application never signs email itself.
+ */
 @Injectable()
 export class AuthMailerService {
   private readonly logger = new Logger(AuthMailerService.name);
+  private smtpTransport?: EmailTransport;
 
-  async sendVerificationEmail(params: {
-    to: string;
-    nickname: string;
-    verifyUrl: string;
-  }) {
-    await this.sendEmail({
+  constructor(
+    private readonly config: EmailConfig = loadEmailConfig(),
+    transportOverride?: EmailTransport,
+  ) {
+    validateEmailConfig(this.config);
+    if (transportOverride) {
+      this.smtpTransport = transportOverride;
+    }
+  }
+
+  /** Test-only hook: bypass the network transport. */
+  setTransport(transport: EmailTransport): void {
+    this.smtpTransport = transport;
+    this.logger.log('SMTP transport overridden (test mode)');
+  }
+
+  async sendVerificationEmail(params: { to: string; nickname: string; verifyUrl: string }) {
+    return this.send({
       to: params.to,
       subject: 'تایید ایمیل حساب',
       html: `
@@ -24,15 +120,12 @@ export class AuthMailerService {
           <p>اگر ایمیل را در Inbox پیدا نکردید، پوشه Spam را هم بررسی کنید.</p>
         </div>
       `,
+      text: `برای تکمیل ثبت‌نام، ایمیل خود را تایید کنید:\n${params.verifyUrl}\n\nاگر ایمیل را در Inbox پیدا نکردید، پوشه Spam را نیز بررسی کنید.`,
     });
   }
 
-  async sendPasswordResetEmail(params: {
-    to: string;
-    nickname: string;
-    resetUrl: string;
-  }) {
-    await this.sendEmail({
+  async sendPasswordResetEmail(params: { to: string; nickname: string; resetUrl: string }) {
+    return this.send({
       to: params.to,
       subject: 'بازیابی رمز عبور',
       html: `
@@ -45,15 +138,12 @@ export class AuthMailerService {
           <p>اگر ایمیل را در Inbox پیدا نکردید، پوشه Spam را هم بررسی کنید.</p>
         </div>
       `,
+      text: `برای تغییر رمز عبور این لینک را باز کنید:\n${params.resetUrl}\n\nاگر ایمیل را در Inbox پیدا نکردید، پوشه Spam را نیز بررسی کنید.`,
     });
   }
 
-  async sendMagicLoginEmail(params: {
-    to: string;
-    nickname: string;
-    loginUrl: string;
-  }) {
-    await this.sendEmail({
+  async sendMagicLoginEmail(params: { to: string; nickname: string; loginUrl: string }) {
+    return this.send({
       to: params.to,
       subject: 'ورود با لینک ایمیل',
       html: `
@@ -66,6 +156,7 @@ export class AuthMailerService {
           <p>اگر ایمیل را در Inbox پیدا نکردید، پوشه Spam را هم بررسی کنید.</p>
         </div>
       `,
+      text: `برای ورود به حساب این لینک را باز کنید:\n${params.loginUrl}\n\nاگر ایمیل را در Inbox پیدا نکردید، پوشه Spam را نیز بررسی کنید.`,
     });
   }
 
@@ -74,9 +165,9 @@ export class AuthMailerService {
     nickname: string;
     message: string;
   }) {
-    const appUrl = process.env.APP_WEB_URL ;
+    const appUrl = this.config.appWebUrl;
     const inboxUrl = `${appUrl}/inbox`;
-    await this.sendEmail({
+    return this.send({
       to: params.to,
       subject: 'اعلان جدید در کی‌داد',
       html: `
@@ -90,191 +181,105 @@ export class AuthMailerService {
           <p>اگر ایمیل را در Inbox پیدا نکردید، پوشه Spam را هم بررسی کنید.</p>
         </div>
       `,
+      text: `${params.message}\n\nبرای مشاهده اینباکس:\n${inboxUrl}`,
     });
   }
 
-  private async sendEmail(params: {
-    to: string;
-    subject: string;
-    html: string;
-  }) {
-    const provider = (process.env.EMAIL_PROVIDER ?? '').toLowerCase().trim();
-
-    if (provider === 'resend') {
-      await this.sendWithResend(params);
-      return;
-    }
-    if (provider === 'smtp') {
-      await this.sendWithSmtp(params);
-      return;
-    }
-
-    this.logger.warn(
-      `EMAIL_PROVIDER is not set (or unknown: "${provider}"). Email to "${params.to}" was NOT actually sent.`,
-    );
-    this.logger.log(
-      `[EMAIL] to=${params.to} subject=${params.subject} html=${params.html.replace(/\s+/g, ' ').trim()}`,
-    );
-  }
-
-  private async sendWithResend(params: {
-    to: string;
-    subject: string;
-    html: string;
-  }) {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.MAIL_FROM;
-
-    if (!apiKey || !from) {
-      this.logger.warn(
-        'EMAIL_PROVIDER=resend but RESEND_API_KEY or MAIL_FROM is missing; falling back to console logging',
-      );
-      this.logger.log(`[EMAIL] to=${params.to} subject=${params.subject}`);
-      return;
-    }
-
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: [params.to],
-        subject: params.subject,
-        html: params.html,
-      }),
-    });
-
-    if (!response.ok) {
-      const payload = await response.text();
-      this.logger.error(`Resend failed (${response.status}): ${payload}`);
-      throw new Error('Failed to send email');
-    }
-  }
-
-  private async sendWithSmtp(params: {
-    to: string;
-    subject: string;
-    html: string;
-  }) {
-    const host = process.env.SMTP_HOST ?? 'host.docker.internal';
-    const port = Number(process.env.SMTP_PORT ?? 25);
-    const from = process.env.MAIL_FROM ?? 'no-reply@kidad.ir';
-    const helo = process.env.SMTP_HELO_NAME ?? 'kidad.ir';
-
-    const lines = [
-      `From: ${from}`,
-      `To: ${params.to}`,
-      `Subject: ${params.subject}`,
-      `Date: ${new Date().toUTCString()}`,
-      `Message-ID: <${randomBytes(16).toString('hex')}@${helo}>`,
-      'MIME-Version: 1.0',
-      'Content-Type: text/html; charset=UTF-8',
-      '',
-      params.html,
-      '',
-    ];
-
-    const data = lines.join('\r\n').replace(/\r?\n\.\r?\n/g, '\r\n..\r\n');
-
-    await this.sendRawSmtp({
-      host,
-      port,
-      helo,
-      from,
+  /**
+   * Single central sending path. Every transactional email goes through here;
+   * callers never create their own transports.
+   */
+  async send(params: SendEmailParams): Promise<SentMailInfo | undefined> {
+    const payload: SendMailPayload = {
+      from: params.from ?? this.config.from,
       to: params.to,
-      data,
-    });
-  }
+      subject: params.subject,
+      html: params.html,
+      text: params.text ?? toPlainText(params.html),
+    };
 
-  private async sendRawSmtp(params: {
-    host: string;
-    port: number;
-    helo: string;
-    from: string;
-    to: string;
-    data: string;
-  }) {
-    const socket = new Socket();
-    socket.setEncoding('utf8');
-    socket.setTimeout(15000);
-
-    await new Promise<void>((resolve, reject) => {
-      const fail = (error: Error) => {
-        if (!socket.destroyed) socket.destroy();
-        reject(error);
-      };
-      socket.on('error', fail);
-      socket.on('timeout', () => fail(new Error('SMTP socket timeout')));
-
-      socket.connect(params.port, params.host, async () => {
-        try {
-          await this.expectCode(socket, 220);
-          await this.command(socket, `HELO ${params.helo}`, 250);
-          await this.command(socket, `MAIL FROM:<${params.from}>`, 250);
-          await this.command(socket, `RCPT TO:<${params.to}>`, 250, 251);
-          await this.command(socket, 'DATA', 354);
-          await this.command(socket, `${params.data}\r\n.`, 250);
-          await this.command(socket, 'QUIT', 221);
-          socket.end();
-          resolve();
-        } catch (error) {
-          fail(error as Error);
-        }
-      });
-    });
-  }
-
-  private async command(
-    socket: Socket,
-    value: string,
-    ...codes: number[]
-  ) {
-    const response = this.expectCode(socket, ...codes);
-    socket.write(`${value}\r\n`);
-    await response;
-  }
-
-  private async expectCode(socket: Socket, ...codes: number[]) {
-    let pending = '';
-    const response = await new Promise<string>((resolve, reject) => {
-      const onError = (error: Error) => {
-        socket.off('data', onData);
-        socket.off('error', onError);
-        reject(error);
-      };
-      const onData = (chunk: string) => {
-        pending += chunk.toString();
-        const complete = pending.split('\n');
-        const rest = complete.pop() ?? '';
-        const lastLine = [...complete].map((l) => l.trim()).filter(Boolean).pop();
-        if (lastLine && /^\d{3}[ -]/.test(lastLine)) {
-          if (lastLine[3] === '-') {
-            pending = `${complete.join('\n')}\n${rest}`;
-            return;
-          }
-          socket.off('data', onData);
-          socket.off('error', onError);
-          resolve(complete.filter((l) => l.trim().length > 0).join('\n'));
-          return;
-        }
-        pending = `${complete.join('\n')}\n${rest}`;
-      };
-      socket.once('error', onError);
-      socket.on('data', onData);
-    });
-
-    const matched = response
-      .split('\n')
-      .map((line) => line.trim())
-      .reverse()
-      .find((line) => /^\d{3}[ -]/.test(line));
-
-    const code = matched ? Number(matched.slice(0, 3)) : NaN;
-    if (!codes.includes(code)) {
-      throw new Error(`SMTP error ${code}: ${response.trim()}`);
+    const transport = this.getTransport();
+    try {
+      const info = await transport.sendMail(payload);
+      this.logger.log(
+        `Email sent to=${params.to} subject=${params.subject} messageId=${info?.messageId ?? '(none)'}`,
+      );
+      return info;
+    } catch (error) {
+      const mapped = mapEmailError(error);
+      this.logger.error(`Email to=${params.to} subject=${params.subject} failed: ${mapped.message}`, (mapped as { cause?: Error }).cause?.stack);
+      throw mapped;
     }
+  }
+
+  private getTransport(): EmailTransport {
+    if (this.smtpTransport) return this.smtpTransport;
+
+    if (this.config.provider === 'smtp') {
+      this.logger.log(
+        `Initializing SMTP transport ${this.config.smtp.host}:${this.config.smtp.port} (HELO ${this.config.smtp.name})`,
+      );
+      this.smtpTransport = nodemailer.createTransport({
+        host: this.config.smtp.host,
+        port: this.config.smtp.port,
+        secure: false,
+        name: this.config.smtp.name,
+        connectionTimeout: this.config.smtp.connectionTimeout,
+        greetingTimeout: this.config.smtp.greetingTimeout,
+        socketTimeout: this.config.smtp.socketTimeout,
+      }) as unknown as EmailTransport;
+      return this.smtpTransport;
+    }
+
+    if (this.config.provider === 'resend') {
+      return this.createResendTransport();
+    }
+
+    return this.createConsoleTransport();
+  }
+
+  private createConsoleTransport(): EmailTransport {
+    return {
+      sendMail: async (payload) => {
+        this.logger.log(
+          `[EMAIL] to=${payload.to} subject=${payload.subject} html=${payload.html.replace(/\s+/g, ' ').trim()}`,
+        );
+        return {};
+      },
+    };
+  }
+
+  private createResendTransport(): EmailTransport {
+    return {
+      sendMail: async (payload) => {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) {
+          this.logger.warn('EMAIL_PROVIDER=resend but RESEND_API_KEY is missing; email NOT sent.');
+          return {};
+        }
+
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: payload.from,
+            to: [payload.to],
+            subject: payload.subject,
+            html: payload.html,
+            text: payload.text,
+          }),
+        });
+
+        if (!response.ok) {
+          const resendPayload = await response.text();
+          this.logger.error(`Resend failed (${response.status}): ${resendPayload}`);
+          throw new Error(`Resend failed (${response.status})`);
+        }
+        return {};
+      },
+    };
   }
 }

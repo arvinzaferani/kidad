@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { Socket } from 'net';
 
 @Injectable()
@@ -97,7 +98,7 @@ export class AuthMailerService {
     subject: string;
     html: string;
   }) {
-    const provider = (process.env.EMAIL_PROVIDER ?? 'console').toLowerCase();
+    const provider = (process.env.EMAIL_PROVIDER ?? '').toLowerCase().trim();
 
     if (provider === 'resend') {
       await this.sendWithResend(params);
@@ -108,6 +109,9 @@ export class AuthMailerService {
       return;
     }
 
+    this.logger.warn(
+      `EMAIL_PROVIDER is not set (or unknown: "${provider}"). Email to "${params.to}" was NOT actually sent.`,
+    );
     this.logger.log(
       `[EMAIL] to=${params.to} subject=${params.subject} html=${params.html.replace(/\s+/g, ' ').trim()}`,
     );
@@ -164,6 +168,8 @@ export class AuthMailerService {
       `From: ${from}`,
       `To: ${params.to}`,
       `Subject: ${params.subject}`,
+      `Date: ${new Date().toUTCString()}`,
+      `Message-ID: <${randomBytes(16).toString('hex')}@${helo}>`,
       'MIME-Version: 1.0',
       'Content-Type: text/html; charset=UTF-8',
       '',
@@ -226,26 +232,35 @@ export class AuthMailerService {
     value: string,
     ...codes: number[]
   ) {
+    const response = this.expectCode(socket, ...codes);
     socket.write(`${value}\r\n`);
-    await this.expectCode(socket, ...codes);
+    await response;
   }
 
   private async expectCode(socket: Socket, ...codes: number[]) {
+    let pending = '';
     const response = await new Promise<string>((resolve, reject) => {
-      const onData = (chunk: string) => {
-        const text = chunk.toString();
-        const lines = text.split('\n').filter(Boolean);
-        const last = lines[lines.length - 1]?.trim();
-        if (!last) return;
-        const hasCode = /^\d{3}[ -]/.test(last);
-        if (!hasCode) return;
-        if (last[3] === '-') return;
-        socket.off('data', onData);
-        resolve(text);
-      };
       const onError = (error: Error) => {
         socket.off('data', onData);
+        socket.off('error', onError);
         reject(error);
+      };
+      const onData = (chunk: string) => {
+        pending += chunk.toString();
+        const complete = pending.split('\n');
+        const rest = complete.pop() ?? '';
+        const lastLine = [...complete].map((l) => l.trim()).filter(Boolean).pop();
+        if (lastLine && /^\d{3}[ -]/.test(lastLine)) {
+          if (lastLine[3] === '-') {
+            pending = `${complete.join('\n')}\n${rest}`;
+            return;
+          }
+          socket.off('data', onData);
+          socket.off('error', onError);
+          resolve(complete.filter((l) => l.trim().length > 0).join('\n'));
+          return;
+        }
+        pending = `${complete.join('\n')}\n${rest}`;
       };
       socket.once('error', onError);
       socket.on('data', onData);

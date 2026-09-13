@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -26,6 +27,8 @@ import { LoginWithLinkDto } from './dto/login-with-link.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
@@ -103,7 +106,11 @@ export class AuthService {
 
     try {
       await this.issuePasswordResetToken(user);
-    } catch (_error) {
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password reset email to ${user.email}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw new BadRequestException(
         'ارسال ایمیل بازیابی ناموفق بود. لطفا دوباره تلاش کنید.',
       );
@@ -161,7 +168,11 @@ export class AuthService {
 
     try {
       await this.issueEmailLoginToken(user);
-    } catch (_error) {
+    } catch (error) {
+      this.logger.error(
+        `Failed to send email login link to ${user.email}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw new BadRequestException(
         'ارسال لینک ورود ناموفق بود. لطفا دوباره تلاش کنید.',
       );
@@ -279,7 +290,11 @@ export class AuthService {
 
     try {
       await this.issueVerificationToken(user);
-    } catch (_error) {
+    } catch (error) {
+      this.logger.error(
+        `Failed to send verification email to ${user.email}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw new BadRequestException(
         'ارسال ایمیل تایید ناموفق بود. لطفا دوباره تلاش کنید.',
       );
@@ -319,9 +334,8 @@ export class AuthService {
     return createHash('sha256').update(rawToken).digest('hex');
   }
 
-  private getBaseHttpUrl() {
-    const rawBaseUrl = process.env.APP_WEB_URL ?? 'http://localhost:3000';
-    return rawBaseUrl.replace(/^https:/i, 'http:');
+  private getBaseWebUrl() {
+    return process.env.APP_WEB_URL ?? 'http://localhost:3000';
   }
 
   private async issueVerificationToken(user: User) {
@@ -347,7 +361,7 @@ export class AuthService {
       }),
     );
 
-    const baseUrl = this.getBaseHttpUrl();
+    const baseUrl = this.getBaseWebUrl();
     const verifyUrl = `${baseUrl}/verify-email?userId=${encodeURIComponent(user.id)}&token=${encodeURIComponent(rawToken)}`;
 
     await this.authMailerService.sendVerificationEmail({
@@ -380,7 +394,7 @@ export class AuthService {
       }),
     );
 
-    const baseUrl = this.getBaseHttpUrl();
+    const baseUrl = this.getBaseWebUrl();
     const resetUrl = `${baseUrl}/reset-password?userId=${encodeURIComponent(user.id)}&token=${encodeURIComponent(rawToken)}`;
 
     await this.authMailerService.sendPasswordResetEmail({
@@ -413,7 +427,7 @@ export class AuthService {
       }),
     );
 
-    const baseUrl = this.getBaseHttpUrl();
+    const baseUrl = this.getBaseWebUrl();
     const loginUrl = `${baseUrl}/email-login?userId=${encodeURIComponent(user.id)}&token=${encodeURIComponent(rawToken)}`;
 
     await this.authMailerService.sendMagicLoginEmail({

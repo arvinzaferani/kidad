@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional, Inject } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
-import { EmailConfig, loadEmailConfig, validateEmailConfig } from '../config/email.config';
+import { EMAIL_CONFIG, EmailConfig, loadEmailConfig, validateEmailConfig } from '../config/email.config';
 
 export interface SendEmailParams {
   to: string;
@@ -89,11 +89,13 @@ function mapEmailError(error: unknown): Error {
 export class AuthMailerService {
   private readonly logger = new Logger(AuthMailerService.name);
   private smtpTransport?: EmailTransport;
+  private readonly config: EmailConfig;
 
   constructor(
-    private readonly config: EmailConfig = loadEmailConfig(),
-    transportOverride?: EmailTransport,
+    @Optional() @Inject(EMAIL_CONFIG) config?: EmailConfig,
+    @Optional() transportOverride?: EmailTransport,
   ) {
+    this.config = config ?? loadEmailConfig();
     validateEmailConfig(this.config);
     if (transportOverride) {
       this.smtpTransport = transportOverride;

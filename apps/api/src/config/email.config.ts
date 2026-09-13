@@ -1,5 +1,8 @@
 export type EmailProvider = 'smtp' | 'resend' | 'console';
 
+/** Nest DI token for the loaded EmailConfig (see AuthModule provider). */
+export const EMAIL_CONFIG = 'EMAIL_CONFIG';
+
 export interface SmtpConfig {
   host: string;
   port: number;

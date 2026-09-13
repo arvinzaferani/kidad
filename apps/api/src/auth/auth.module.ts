@@ -9,6 +9,7 @@ import {
   User,
 } from '../database/entities';
 import { AuthMailerService } from './auth-mailer.service';
+import { EMAIL_CONFIG, loadEmailConfig } from '../config/email.config';
 
 @Module({
   imports: [
@@ -20,7 +21,11 @@ import { AuthMailerService } from './auth-mailer.service';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthMailerService],
+  providers: [
+    AuthService,
+    AuthMailerService,
+    { provide: EMAIL_CONFIG, useFactory: loadEmailConfig },
+  ],
   exports: [AuthMailerService],
 })
 export class AuthModule {}

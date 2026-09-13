@@ -111,9 +111,6 @@ export class AuthService {
         `Failed to send password reset email to ${user.email}: ${(error as Error).message}`,
         (error as Error).stack,
       );
-      throw new BadRequestException(
-        'ارسال ایمیل بازیابی ناموفق بود. لطفا دوباره تلاش کنید.',
-      );
     }
 
     return { sent: true };
@@ -172,9 +169,6 @@ export class AuthService {
       this.logger.error(
         `Failed to send email login link to ${user.email}: ${(error as Error).message}`,
         (error as Error).stack,
-      );
-      throw new BadRequestException(
-        'ارسال لینک ورود ناموفق بود. لطفا دوباره تلاش کنید.',
       );
     }
 
@@ -294,9 +288,6 @@ export class AuthService {
       this.logger.error(
         `Failed to send verification email to ${user.email}: ${(error as Error).message}`,
         (error as Error).stack,
-      );
-      throw new BadRequestException(
-        'ارسال ایمیل تایید ناموفق بود. لطفا دوباره تلاش کنید.',
       );
     }
     return { sent: true };

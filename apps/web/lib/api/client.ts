@@ -1,11 +1,18 @@
 import axios from 'axios';
 import { getAuthToken } from '../auth/token';
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
+const configuredBaseURL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
   (process.env.NODE_ENV === 'development'
     ? 'http://localhost:3008/api'
     : '/api');
+
+const baseURL = (() => {
+  const trimmed = configuredBaseURL.replace(/\/+$/, '');
+  return trimmed.endsWith('/api')
+    ? trimmed
+    : `${trimmed}${trimmed.length ? '/' : ''}api`;
+})();
 
 export const apiClient = axios.create({
   baseURL,

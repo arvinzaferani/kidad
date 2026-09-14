@@ -1,7 +1,6 @@
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AppShell, Card } from '../components/ui';
 import {
   getApiError,
@@ -13,11 +12,19 @@ import {
 
 type AuthMode = 'login' | 'signup';
 
+function safeNextPath(raw: string | null): string {
+  const fallback = '/dashboard';
+  if (!raw) return fallback;
+  if (!raw.startsWith('/')) return fallback;
+  if (raw.startsWith('//')) return fallback;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) return fallback;
+  return raw;
+}
+
 export default function LoginPage() {
-  const router = useRouter();
   const nextPath =
     typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('next') || '/dashboard'
+      ? safeNextPath(new URLSearchParams(window.location.search).get('next'))
       : '/dashboard';
 
   const [mode, setMode] = useState<AuthMode>('login');
@@ -56,7 +63,7 @@ export default function LoginPage() {
         email: loginEmail.trim(),
         password: loginPassword,
       });
-      router.push(nextPath);
+      window.location.href = nextPath;
     } catch (mutationError) {
       const message = getApiError(mutationError);
       setError(message);
@@ -81,7 +88,7 @@ export default function LoginPage() {
         nickname: signupNickname.trim() || undefined,
       });
       setInfo('ثبت‌نام با موفقیت انجام شد. حالا وارد حساب شدی.');
-      router.push(nextPath);
+      window.location.href = nextPath;
     } catch (mutationError) {
       setError(getApiError(mutationError));
     }

@@ -2,12 +2,11 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { AppShell, Card } from '../components/ui';
 import { getApiError, useLoginWithLink } from '../../lib/auth/hooks';
 
 function EmailLoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const loginWithLinkMutation = useLoginWithLink();
   const [resultMessage, setResultMessage] = useState<string | null>(null);
@@ -30,7 +29,7 @@ function EmailLoginContent() {
         if (cancelled) return;
         setResultMessage('ورود با موفقیت انجام شد. در حال انتقال به داشبورد...');
         setTimeout(() => {
-          router.push('/dashboard');
+          window.location.href = '/dashboard';
         }, 900);
       } catch (mutationError) {
         if (cancelled) return;
@@ -43,7 +42,7 @@ function EmailLoginContent() {
     return () => {
       cancelled = true;
     };
-  }, [userId, token, router]);
+  }, [userId, token]);
 
   return (
     <AppShell title="ورود با لینک ایمیل" subtitle="در حال بررسی لینک ورود...">

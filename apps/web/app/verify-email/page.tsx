@@ -2,12 +2,11 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { AppShell, Card } from '../components/ui';
 import { getApiError, useVerifyEmail } from '../../lib/auth/hooks';
 
 function VerifyEmailContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const verifyMutation = useVerifyEmail();
   const [resultMessage, setResultMessage] = useState<string | null>(null);
@@ -29,7 +28,7 @@ function VerifyEmailContent() {
         if (cancelled) return;
         setResultMessage('ایمیل شما تایید شد. در حال انتقال به داشبورد...');
         setTimeout(() => {
-          router.push('/dashboard');
+          window.location.href = '/dashboard';
         }, 900);
       } catch (error) {
         if (cancelled) return;
@@ -41,7 +40,7 @@ function VerifyEmailContent() {
     return () => {
       cancelled = true;
     };
-  }, [router, token, userId]);
+  }, [token, userId]);
 
   return (
     <AppShell title="تایید ایمیل" subtitle="در حال بررسی لینک تایید...">

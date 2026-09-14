@@ -71,10 +71,10 @@ export function useSignup() {
       const { data } = await apiClient.post<AuthResponse>('/auth/signup', payload);
       return data;
     },
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       if (data.token) {
         setAuthToken(data.token);
-        await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       }
     },
     meta: {
@@ -91,9 +91,9 @@ export function useLogin() {
       const { data } = await apiClient.post<LoginResponse>('/auth/login', payload);
       return data;
     },
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       setAuthToken(data.token);
-      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
     meta: {
       humanErrorMessage: 'ورود ناموفق بود',
@@ -136,10 +136,10 @@ export function useLoginWithLink() {
       const { data } = await apiClient.post<AuthResponse>('/auth/login-with-link', payload);
       return data;
     },
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       if (data.token) {
         setAuthToken(data.token);
-        await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       }
     },
   });
@@ -152,10 +152,10 @@ export function useVerifyEmail() {
       const { data } = await apiClient.post<AuthResponse>('/auth/verify-email', payload);
       return data;
     },
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       if (data.token) {
         setAuthToken(data.token);
-        await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       }
     },
     meta: {

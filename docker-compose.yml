@@ -55,8 +55,9 @@ services:
       APP_WEB_URL: ${APP_WEB_URL:-https://kidad.ir}
       EMAIL_VERIFY_TTL_MINUTES: ${EMAIL_VERIFY_TTL_MINUTES:-30}
 
-      extra_hosts:
+    extra_hosts:
         - "host.docker.internal:host-gateway"
+
     command: sh -c "npm run typeorm:migration:run && npm run start"
 
     networks:

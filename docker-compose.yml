@@ -46,16 +46,17 @@ services:
       DB_CONNECT_TIMEOUT_MS: "5000"
 
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-smtp}
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-host.docker.internal}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_HELO_NAME: ${SMTP_HELO_NAME:-mail.kidad.ir}
       MAIL_FROM: ${MAIL_FROM:-no-reply@kidad.ir}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
 
       APP_WEB_URL: ${APP_WEB_URL:-https://kidad.ir}
       EMAIL_VERIFY_TTL_MINUTES: ${EMAIL_VERIFY_TTL_MINUTES:-30}
 
-      SMTP_HOST: ${SMTP_HOST:-host.docker.internal}
-      SMTP_PORT: ${SMTP_PORT:-25}
-      SMTP_HELO_NAME: ${SMTP_HELO_NAME:-mail.kidad.ir}
-
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
     command: sh -c "npm run typeorm:migration:run && npm run start"
 
     networks:

@@ -98,21 +98,18 @@ export class AuthService {
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
+    const email = dto.email.trim().toLowerCase();
     const user = await this.usersRepository.findOne({
-      where: { email: dto.email.trim().toLowerCase() },
+      where: { email },
     });
-
-    if (!user) return { sent: true };
-
-    try {
-      await this.issuePasswordResetToken(user);
-    } catch (error) {
-      this.logger.error(
-        `Failed to send password reset email to ${user.email}: ${(error as Error).message}`,
-        (error as Error).stack,
-      );
+  
+    // Don't reveal whether the email exists.
+    if (!user) {
+      return { sent: true };
     }
-
+  
+    await this.issuePasswordResetToken(user);
+  
     return { sent: true };
   }
 

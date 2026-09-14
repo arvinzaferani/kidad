@@ -1098,6 +1098,51 @@ gap: 4px;
   cursor: not-allowed;
 }
 
+.auth-link {
+  border: none;
+  background: none;
+  padding: 0;
+  width: fit-content;
+  color: var(--accent);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.auth-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.auth-link:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--fg);
+  opacity: 0.45;
+  font-size: 0.8rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-switch {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  text-align: center;
+}
+
 .field {
   width: 100%;
   border: none;
@@ -1296,6 +1341,7 @@ gap: 4px;
 }
 
 .btn:focus-visible,
+.auth-link:focus-visible,
 .field:focus-visible,
 .theme-toggle:focus-visible,
 .nav-link:focus-visible,

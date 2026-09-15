@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const protectedRoutes = ['/dashboard', '/groups', '/friends', '/profile', '/settings', '/inbox'];
+const protectedRoutes = ['/dashboard', '/groups', '/friends', '/profile', '/settings', '/inbox', '/quick-split'];
 const authRoutes = ['/login'];
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
   const { pathname } = request.nextUrl;
 
-  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+  const isJoinRoute = pathname.startsWith('/split/join/');
+  const isSplitRoute = pathname.startsWith('/split') && !isJoinRoute;
+
+  const isProtected =
+    protectedRoutes.some((route) => pathname.startsWith(route)) || isSplitRoute;
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
   if (isProtected && !token) {
@@ -25,5 +29,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/groups/:path*', '/friends/:path*', '/profile/:path*', '/settings/:path*', '/inbox/:path*', '/login'],
+  matcher: ['/dashboard/:path*', '/groups/:path*', '/friends/:path*', '/profile/:path*', '/settings/:path*', '/inbox/:path*', '/quick-split', '/split/:path*', '/login'],
 };

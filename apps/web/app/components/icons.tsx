@@ -1,5 +1,6 @@
 'use client';
 
+import { BookUser,Users, HandCoins, Settings, LayoutDashboard } from 'lucide-react';
 import { ReactNode } from 'react';
 
 type IconProps = {
@@ -42,15 +43,21 @@ export function HomeIcon(props: IconProps) {
     </BaseIcon>
   );
 }
+export function DashboardIcon(props: IconProps) {
+  return (
+    <LayoutDashboard/>
+  );
+}
 
 export function UsersIcon(props: IconProps) {
   return (
-    <BaseIcon {...props}>
-      <path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-      <path d="M8 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-      <path d="M2.5 20a5.5 5.5 0 0 1 11 0" />
-      <path d="M12.5 20a4.5 4.5 0 0 1 9 0" />
-    </BaseIcon>
+    <BookUser/>
+  );
+}
+
+export function GroupsIcon(props: IconProps) {
+  return (
+    <Users/>
   );
 }
 
@@ -65,10 +72,7 @@ export function InboxIcon(props: IconProps) {
 
 export function UserIcon(props: IconProps) {
   return (
-    <BaseIcon {...props}>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21a8 8 0 0 1 16 0" />
-    </BaseIcon>
+    <Settings/>
   );
 }
 
@@ -128,5 +132,11 @@ export function ClockIcon(props: IconProps) {
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v6l4 2" />
     </BaseIcon>
+  );
+}
+
+export function SplitIcon(props: IconProps) {
+  return (
+    <HandCoins/>
   );
 }

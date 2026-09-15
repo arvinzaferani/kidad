@@ -12,3 +12,8 @@ export * from './friend-request.entity';
 export * from './email-verification-token.entity';
 export * from './password-reset-token.entity';
 export * from './email-login-token.entity';
+export * from './split-session.entity';
+export * from './split-member.entity';
+export * from './split-expense.entity';
+export * from './split-expense-payer.entity';
+export * from './split-expense-participant.entity';

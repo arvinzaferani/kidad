@@ -2,7 +2,8 @@
 
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { AppShell, Card } from '../components/ui';
-import { getApiError, useAuthMe, useResendVerification } from '../../lib/auth/hooks';
+import { ThemeToggle } from '../components/theme-toggle';
+import { getApiError, useAuthMe, useLogout, useResendVerification } from '../../lib/auth/hooks';
 import { useUpdateProfile } from '../../lib/users/hooks';
 import { useAlert } from '../providers/alert-provider';
 
@@ -11,6 +12,7 @@ export default function ProfilePage() {
   const updateProfileMutation = useUpdateProfile();
   const resendVerificationMutation = useResendVerification();
   const { showAlert } = useAlert();
+  const logout = useLogout();
 
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
@@ -190,6 +192,28 @@ export default function ProfilePage() {
             </button>
           </form>
         ) : null}
+      </Card>
+
+      <Card title="تنظیمات">
+        <div className="stack">
+          <div className="settings-row">
+            <span className="settings-row-label">حالت رنگ (تم)</span>
+            <ThemeToggle />
+          </div>
+          <div className="settings-row">
+            <span className="settings-row-label">خروج از حساب</span>
+            <button
+              type="button"
+              className="btn btn-exit"
+              onClick={() => {
+                logout();
+                window.location.href = '/login';
+              }}
+            >
+              خروج
+            </button>
+          </div>
+        </div>
       </Card>
 
       {message ? <div className="notice notice-success">{message}</div> : null}

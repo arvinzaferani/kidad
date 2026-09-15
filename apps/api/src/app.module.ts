@@ -10,6 +10,7 @@ import { InboxModule } from './inbox/inbox.module';
 import { FriendsModule } from './friends/friends.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AdminModule } from './admin/admin.module';
+import { SplitModule } from './split/split.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from './admin/admin.module';
     FriendsModule,
     DashboardModule,
     AdminModule,
+    SplitModule,
   ],
 })
 export class AppModule {}

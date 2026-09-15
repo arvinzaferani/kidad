@@ -50,3 +50,10 @@ export enum GroupMemberMode {
   STANDARD = 'STANDARD',
   CREATOR_MANAGED = 'CREATOR_MANAGED',
 }
+
+export enum SplitSessionStatus {
+  ACTIVE = 'ACTIVE',
+  CLOSED = 'CLOSED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}

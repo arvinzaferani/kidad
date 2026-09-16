@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { QueryProvider } from './providers/query-provider';
 import { AlertProvider } from './providers/alert-provider';
+import { KeyboardDetector } from './components/keyboard-detector';
 
 export const metadata: Metadata = {
   title: 'کی‌داد؟',
@@ -43,8 +44,14 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="color-scheme" content="light dark" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('whopaid-theme');var d=document.documentElement;if(t==='dark'){d.classList.add('dark');}else if(t==='light'){d.classList.add('light');}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body>
+        <KeyboardDetector />
         <QueryProvider>
           <AlertProvider>{children}</AlertProvider>
         </QueryProvider>

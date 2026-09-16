@@ -638,16 +638,25 @@ export default function GroupPage({ params }: GroupPageProps) {
       </Card>
 
       {quickAddOpen && group ? (
-        <div className="bottom-sheet-root" role="dialog" aria-modal="true" aria-labelledby="quick-add-title">
+        <div className="modal-root" role="dialog" aria-modal="true" aria-labelledby="quick-add-title">
           <button
             type="button"
-            className="bottom-sheet-backdrop"
+            className="modal-backdrop"
             aria-label="بستن"
             onClick={() => setQuickAddOpen(false)}
           />
-          <div className="bottom-sheet">
-            <div className="bottom-sheet-handle" />
-            <h2 id="quick-add-title" className="bottom-sheet-title">هزینه جدید</h2>
+          <div className="modal-card card">
+            <div className="modal-header">
+              <h2 id="quick-add-title" className="card-title">هزینه جدید</h2>
+              <button
+                type="button"
+                className="sidebar-close"
+                aria-label="بستن"
+                onClick={() => setQuickAddOpen(false)}
+              >
+                ×
+              </button>
+            </div>
             <form ref={formRef} onSubmit={onAddExpense} className="stack">
               <label className="label">عنوان هزینه</label>
               <input

@@ -137,6 +137,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  background: var(--bg);
 }
 
 body {
@@ -293,6 +294,7 @@ a {
 .app-main-centered {
   min-height: calc(100vh - 11.5rem);
   align-content: center;
+  padding-bottom: 2rem;
 }
 
 .stack {
@@ -694,6 +696,10 @@ a {
   gap: 0.5rem;
 }
 
+.app-header-actions-hidden {
+  display: none;
+}
+
 .app-header-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -757,12 +763,13 @@ a {
 }
 
 .modal-root {
-  position: absolute;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
   display: flex;
   justify-content: center;
   align-items: center;
-  inset: 0;
-  z-index: 70;
+  padding: 1rem;
 }
 
 .modal-backdrop {
@@ -775,6 +782,7 @@ a {
 
 .modal-card {
   width: min(28rem, calc(100vw - 2rem));
+  margin-block: auto;
   max-height: calc(100vh - 2rem);
   overflow: auto;
 }
@@ -2178,7 +2186,6 @@ a {
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -2190,7 +2197,6 @@ a {
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -2369,9 +2375,31 @@ body {
     box-shadow var(--motion-duration-normal) var(--motion-easing-standard);
 }
 
-.persian-picker-popover {
+.persian-picker-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.persian-picker-modal {
+  width: min(24rem, calc(100vw - 2rem));
+  margin-block: auto;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  display: grid;
+  gap: 0.75rem;
   animation: scale-in 200ms var(--motion-easing-spring) both;
-  transform-origin: top center;
+  transform-origin: center center;
+}
+
+body:has(.modal-root) .bottom-nav,
+body:has(.persian-picker-modal-root) .bottom-nav,
+body:has(.bottom-sheet-root) .bottom-nav,
+body.keyboard-open .bottom-nav {
+  display: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

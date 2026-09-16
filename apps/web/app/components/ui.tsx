@@ -67,7 +67,7 @@ export function AppShell({
           <h1 className="page-title">{title}</h1>
           {subtitle ? <p className="subtitle">{subtitle}</p> : null}
         </div>
-        <div className="app-header-actions">
+        <div className={`app-header-actions ${shouldCenterMain ? 'app-header-actions-hidden' : ''}`}>
           {isLoggedIn ? (
             <Link
               href="/inbox"
@@ -93,7 +93,8 @@ export function AppShell({
         </div>
       </div>
     </main>
-    <nav className="bottom-nav" role="navigation" aria-label="ناوبری اصلی">
+    {shouldCenterMain ? null : (
+      <nav className="bottom-nav" role="navigation" aria-label="ناوبری اصلی">
       {navItems.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = item.icon;
@@ -125,6 +126,7 @@ export function AppShell({
         );
       })}
     </nav>
+    )}
   </>);
 }
 

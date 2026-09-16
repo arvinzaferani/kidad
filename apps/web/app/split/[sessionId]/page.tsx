@@ -354,11 +354,20 @@ export default function SplitSessionPage() {
           </Card>
 
           {formOpen && session.status === 'ACTIVE' && session.isHost ? (
-            <div className="bottom-sheet-root" role="dialog" aria-modal="true" aria-labelledby="add-expense-title">
-              <button type="button" className="bottom-sheet-backdrop" aria-label="بستن" onClick={() => setFormOpen(false)} />
-              <div className="bottom-sheet">
-                <div className="bottom-sheet-handle" />
-                <h2 id="add-expense-title" className="bottom-sheet-title">هزینه جدید</h2>
+            <div className="modal-root" role="dialog" aria-modal="true" aria-labelledby="add-expense-title">
+              <button type="button" className="modal-backdrop" aria-label="بستن" onClick={() => setFormOpen(false)} />
+              <div className="modal-card card">
+                <div className="modal-header">
+                  <h2 id="add-expense-title" className="card-title">هزینه جدید</h2>
+                  <button
+                    type="button"
+                    className="sidebar-close"
+                    aria-label="بستن"
+                    onClick={() => setFormOpen(false)}
+                  >
+                    ×
+                  </button>
+                </div>
                 <form onSubmit={onAddExpense} className="stack">
                   <label className="label">عنوان هزینه</label>
                   <input

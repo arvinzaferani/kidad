@@ -3,7 +3,7 @@
   "short_name": "کی‌داد",
   "start_url": "/login",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#f5f4ef",
   "theme_color": "#16a34a",
   "icons": [
     {

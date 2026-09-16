@@ -249,61 +249,85 @@ export function PersianDateTimePicker({
       </button>
 
       {open ? (
-        <div className="persian-picker-popover">
-          <div className="persian-picker-header">
-            <button type="button" className="persian-picker-nav" onClick={() => onMonthChange(-1)}>
-              ماه قبل
+        <div className="persian-picker-modal-root" role="dialog" aria-modal="true" aria-labelledby={labelId}>
+          <button
+            type="button"
+            className="modal-backdrop"
+            aria-label="بستن"
+            onClick={() => setOpen(false)}
+          />
+          <div className="persian-picker-modal card">
+            <div className="modal-header">
+              <h2 className="card-title">انتخاب تاریخ و زمان</h2>
+              <button
+                type="button"
+                className="sidebar-close"
+                aria-label="بستن"
+                onClick={() => setOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="persian-picker-header">
+              <button type="button" className="persian-picker-nav" onClick={() => onMonthChange(-1)}>
+                ماه قبل
+              </button>
+              <strong>
+                {monthNames[parts.jm - 1]} {parts.jy}
+              </strong>
+              <button type="button" className="persian-picker-nav" onClick={() => onMonthChange(1)}>
+                ماه بعد
+              </button>
+            </div>
+
+            <div className="persian-picker-weekdays">
+              {weekDays.map((weekDay) => (
+                <span key={weekDay}>{weekDay}</span>
+              ))}
+            </div>
+
+            <div className="persian-picker-days">
+              {calendarCells.map((day, index) =>
+                day ? (
+                  <button
+                    key={day}
+                    type="button"
+                    className={`persian-picker-day ${day === selectedDay ? 'persian-picker-day-active' : ''}`}
+                    onClick={() => {
+                      emit({ ...parts, jd: day });
+                      setOpen(false);
+                    }}
+                  >
+                    {day}
+                  </button>
+                ) : (
+                  <span key={`empty-${index}`} className="persian-picker-empty" />
+                ),
+              )}
+            </div>
+
+            <label className="persian-picker-time">
+              <span>ساعت</span>
+              <input
+                className="field"
+                type="time"
+                value={`${pad2(parts.hour)}:${pad2(parts.minute)}`}
+                onChange={(event) => {
+                  const [hour = '0', minute = '0'] = event.target.value.split(':');
+                  emit({
+                    ...parts,
+                    hour: Number(hour),
+                    minute: Number(minute),
+                  });
+                }}
+              />
+            </label>
+
+            <button type="button" className="btn btn-primary" onClick={() => setOpen(false)}>
+              تایید
             </button>
-            <strong>
-              {monthNames[parts.jm - 1]} {parts.jy}
-            </strong>
-            <button type="button" className="persian-picker-nav" onClick={() => onMonthChange(1)}>
-              ماه بعد
-            </button>
           </div>
-
-          <div className="persian-picker-weekdays">
-            {weekDays.map((weekDay) => (
-              <span key={weekDay}>{weekDay}</span>
-            ))}
-          </div>
-
-          <div className="persian-picker-days">
-            {calendarCells.map((day, index) =>
-              day ? (
-                <button
-                  key={day}
-                  type="button"
-                  className={`persian-picker-day ${day === selectedDay ? 'persian-picker-day-active' : ''}`}
-                  onClick={() => {
-                    emit({ ...parts, jd: day });
-                    setOpen(false);
-                  }}
-                >
-                  {day}
-                </button>
-              ) : (
-                <span key={`empty-${index}`} className="persian-picker-empty" />
-              ),
-            )}
-          </div>
-
-          <label className="persian-picker-time">
-            <span>ساعت</span>
-            <input
-              className="field"
-              type="time"
-              value={`${pad2(parts.hour)}:${pad2(parts.minute)}`}
-              onChange={(event) => {
-                const [hour = '0', minute = '0'] = event.target.value.split(':');
-                emit({
-                  ...parts,
-                  hour: Number(hour),
-                  minute: Number(minute),
-                });
-              }}
-            />
-          </label>
         </div>
       ) : null}
 

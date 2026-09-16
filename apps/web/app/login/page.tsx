@@ -9,7 +9,9 @@ import {
   useSendLoginLink,
   useSignup,
 } from '../../lib/auth/hooks';
+import Image from "next/image";
 
+import logo from '../../public/kidad-logo.png';
 type AuthMode = 'login' | 'signup';
 
 function safeNextPath(raw: string | null): string {
@@ -144,6 +146,15 @@ export default function LoginPage() {
         {mode === 'login' ? (
           <>
             <form onSubmit={onSubmitLogin} className="stack">
+              <div style={{'width': '100%', 'display': 'flex', 'justifyContent': 'center'}}>
+              <div className='logo-parent'>
+              <Image
+              className='logo-img'
+                src={logo}
+                alt="QR کد دعوت به اسپلیت"
+              />
+              </div>
+              </div>
               <label className="label">ایمیل *</label>
               <input
                 type="email"

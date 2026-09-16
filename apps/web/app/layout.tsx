@@ -6,6 +6,10 @@ import { AlertProvider } from './providers/alert-provider';
 export const metadata: Metadata = {
   title: 'کی‌داد؟',
   description: 'اپلیکیشن تقسیم هزینه برای دوستا و خانواده – کی‌داد؟',
+  icons: {
+    icon: '/kidad-fav.png',
+    apple: '/kidad-fav.png',
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -38,6 +42,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="color-scheme" content="light dark" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
       </head>
       <body>
         <QueryProvider>

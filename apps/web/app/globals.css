@@ -1286,7 +1286,20 @@ a {
   opacity: 0.85;
   text-align: center;
 }
-
+.logo-parent{
+  width: 100px;
+  height: 100px;
+  box-shadow: 6px 6px 24px var(--neu-shadow-dark), -6px -6px 24px var(--neu-shadow-light), inset 3px 3px 12px #2d5351, inset -3px -3px 12px #77dcd8;
+  border-radius: 50% ;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(93, 172, 169,0.8);
+}
+.logo-img{
+  width:80px;
+  height:80px;
+}
 .field {
   width: 100%;
   border: none;

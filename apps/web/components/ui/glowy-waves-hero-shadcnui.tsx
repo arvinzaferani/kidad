@@ -1,8 +1,8 @@
 'use client';
 
 import { motion, type Variants } from 'framer-motion';
-import { ArrowRight, Download, Sparkles } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRight, Sparkles } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -45,24 +45,6 @@ export function GlowyWavesHero() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
   const targetMouseRef = useRef({ x: 0, y: 0 });
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<Event | null>(null);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstall = useCallback(async () => {
-    if (!deferredPrompt) return;
-    (deferredPrompt as any).prompt();
-    const result = await (deferredPrompt as any).userChoice;
-    if (result.outcome === 'accepted') setDeferredPrompt(null);
-  }, [deferredPrompt]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -330,20 +312,14 @@ export function GlowyWavesHero() {
 
           <motion.div
             variants={itemVariants}
-            style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+            style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap' }}
           >
-            {deferredPrompt && (
-              <Button onClick={handleInstall}>
-                <Download style={{ width: '1rem', height: '1rem' }} aria-hidden="true" />
-                نصب اپ
-              </Button>
-            )}
-            <Button onClick={() => router.push('/login')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', border: 'none', borderRadius: '24px', height: '40px', padding: '0 1.5rem', backgroundColor: 'white', color: 'var(--primary-foreground)', width: '160px' }}>
+            <Button onClick={() => router.push('/login')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', border: 'none', borderRadius: '24px', height: '40px', padding: '0 1.5rem', backgroundColor: 'white', color: '#111827', width: '160px' }}>
             <ArrowRight style={{ width: '1rem', height: '1rem', transition: 'transform 0.15s' }} aria-hidden="true" />
 
               شروع کن
             </Button>
-            <Button style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', borderRadius: '24px', height: '40px', padding: '0 1.5rem', backgroundColor: '#00000000', color: 'white', width: '160px', border:'solid 1px white' }}
+            <Button style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', borderRadius: '24px', height: '40px', padding: '0 1.5rem', backgroundColor: '#00000000', color: 'var(--foreground)', width: '160px', border:'solid 1px var(--border)' }}
             variant="outline" onClick={() => router.push('/dashboard')}>
               دیدن داشبورد
             </Button>
@@ -356,7 +332,7 @@ export function GlowyWavesHero() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', borderRadius: '1rem', border: '1px solid color-mix(in srgb, var(--border) 30%, transparent)', padding: '1.5rem', backdropFilter: 'blur(4px)', backgroundColor: 'var(--background)' }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', borderRadius: '1rem', border: '1px solid color-mix(in srgb, var(--border) 30%, transparent)', padding: '1.5rem', backdropFilter: 'blur(4px)', backgroundColor: 'var(--background)' }}
         >
           {highlights.map((item, i) => (
             <motion.div

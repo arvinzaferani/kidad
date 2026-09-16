@@ -1,5 +1,6 @@
 'use client';
 
+import { ContactDetailModal } from '../components/contact-detail-modal';
 import { useState } from 'react';
 import { AppShell, Card, Placeholder } from '../components/ui';
 import { getApiError, useAuthMe } from '../../lib/auth/hooks';

@@ -9,6 +9,7 @@ import {
 import { SplitService } from './split.service';
 import { CreateSplitSessionDto } from './dto/create-split-session.dto';
 import { CreateSplitExpenseDto } from './dto/create-split-expense.dto';
+import { JoinSplitAsGuestDto } from './dto/join-split-as-guest.dto';
 import { parseRequestUserId } from './split-auth';
 
 @Controller('split')
@@ -34,6 +35,14 @@ export class SplitController {
     @Headers('authorization') authorization: string | undefined,
   ) {
     return this.splitService.join(inviteToken, parseRequestUserId(authorization));
+  }
+
+  @Post('join/:inviteToken/guest')
+  joinAsGuest(
+    @Param('inviteToken') inviteToken: string,
+    @Body() dto: JoinSplitAsGuestDto,
+  ) {
+    return this.splitService.joinAsGuest(inviteToken, dto);
   }
 
   @Get('sessions/:sessionId')

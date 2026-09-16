@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { QueryProvider } from './providers/query-provider';
 import { AlertProvider } from './providers/alert-provider';
+import { AccountCompletionProvider } from './providers/account-completion-provider';
 import { KeyboardDetector } from './components/keyboard-detector';
 
 export const metadata: Metadata = {
@@ -53,7 +54,9 @@ export default function RootLayout({
       <body>
         <KeyboardDetector />
         <QueryProvider>
-          <AlertProvider>{children}</AlertProvider>
+          <AlertProvider>
+            <AccountCompletionProvider>{children}</AccountCompletionProvider>
+          </AlertProvider>
         </QueryProvider>
       </body>
     </html>

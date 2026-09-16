@@ -5,6 +5,7 @@ import { AppShell, Card, Placeholder } from '../../components/ui';
 import { PersianDateTimePicker } from '../../components/date-time-picker';
 import { PlusIcon, ClockIcon } from '../../components/icons';
 import { StaggerItem } from '../../components/page-transition';
+import { ModalPortal } from '../../components/modal-portal';
 import { getApiError, useAuthMe } from '../../../lib/auth/hooks';
 import {
   CreateSettlementPayload,
@@ -23,6 +24,7 @@ import {
 } from '../../../lib/groups/hooks';
 import { useFriends } from '../../../lib/friends/hooks';
 import { useAlert } from '../../providers/alert-provider';
+import { RequireCompletedAccount } from '../../providers/account-completion-provider';
 import { ArrowRight, ArrowRightLeft, Users } from 'lucide-react';
 
 interface GroupPageProps {
@@ -103,6 +105,14 @@ function getMemberName(members: GroupMemberSummary[], memberId: string) {
 }
 
 export default function GroupPage({ params }: GroupPageProps) {
+  return (
+    <RequireCompletedAccount feature="گروه">
+      <GroupContent params={params} />
+    </RequireCompletedAccount>
+  );
+}
+
+function GroupContent({ params }: GroupPageProps) {
   const { showAlert } = useAlert();
   const { data: me } = useAuthMe();
   const { data: group, isLoading, isError } = useGroup(params.groupId, me?.id);
@@ -366,6 +376,7 @@ export default function GroupPage({ params }: GroupPageProps) {
       headerImageAlt={group?.name}
     >
       {friendModalOpen ? (
+        <ModalPortal>
         <div className="modal-root" role="dialog" aria-modal="true" aria-labelledby="add-friend-modal-title">
           <button
             type="button"
@@ -477,6 +488,7 @@ export default function GroupPage({ params }: GroupPageProps) {
             )}
           </div>
         </div>
+        </ModalPortal>
       ) : null}
       {group && myMember ? (
         <div className="balance-hero">
@@ -638,6 +650,7 @@ export default function GroupPage({ params }: GroupPageProps) {
       </Card>
 
       {quickAddOpen && group ? (
+        <ModalPortal>
         <div className="modal-root" role="dialog" aria-modal="true" aria-labelledby="quick-add-title">
           <button
             type="button"
@@ -773,6 +786,7 @@ export default function GroupPage({ params }: GroupPageProps) {
             </form>
           </div>
         </div>
+        </ModalPortal>
       ) : null}
 
       <Card title="آخرین هزینه‌ها" headerAction={

@@ -11,8 +11,17 @@ import {
   useRespondFriendRequest,
 } from '../../lib/friends/hooks';
 import { useAlert } from '../providers/alert-provider';
+import { RequireCompletedAccount } from '../providers/account-completion-provider';
 
 export default function FriendsPage() {
+  return (
+    <RequireCompletedAccount feature="دوستان">
+      <FriendsContent />
+    </RequireCompletedAccount>
+  );
+}
+
+function FriendsContent() {
   const { data: me } = useAuthMe();
   const { showAlert } = useAlert();
   const [friendsPage, setFriendsPage] = useState(1);

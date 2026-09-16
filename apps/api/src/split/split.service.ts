@@ -18,6 +18,7 @@ import {
   SplitSessionStatus,
   SplitType,
   User,
+  UserStatus,
 } from '../database/entities';
 import { SettlementEngine } from '../domain/settlement/settlement.service';
 import {
@@ -32,6 +33,7 @@ import {
   CreateSplitExpenseDto,
   SplitPayerDto,
 } from './dto/create-split-expense.dto';
+import { JoinSplitAsGuestDto } from './dto/join-split-as-guest.dto';
 
 const INVALID_INVITE_MESSAGE =
   'این دعوتنامه نامعتبر است یا دیگر فعال نیست.';
@@ -98,6 +100,44 @@ export class SplitService {
     await this.sessionsRepository.save(session);
     await this.ensureMember(session.id, hostId);
     return this.findView(session.id, hostId);
+  }
+
+  async joinAsGuest(inviteToken: string, dto: JoinSplitAsGuestDto) {
+    const session = await this.sessionsRepository.findOne({
+      where: { inviteToken },
+    });
+    if (!session) {
+      throw new NotFoundException(INVALID_INVITE_MESSAGE);
+    }
+    if (session.status !== SplitSessionStatus.ACTIVE) {
+      throw new BadRequestException('این اسپلیت دیگر اعضای جدید نمی‌پذیرد.');
+    }
+
+    const email = dto.email.trim().toLowerCase();
+    const existingUser = await this.usersRepository.findOne({
+      where: { email },
+    });
+    if (existingUser) {
+      return { requiresMagicLink: true, email };
+    }
+
+    const user = await this.usersRepository.save(
+      this.usersRepository.create({
+        email,
+        nickname: dto.nickname.trim(),
+        isEmailVerified: true,
+        status: UserStatus.ONBOARDING,
+      }),
+    );
+
+    const token = `dev-${user.id}`;
+    await this.ensureMember(session.id, user.id);
+
+    return {
+      requiresMagicLink: false,
+      token,
+      session: await this.findView(session.id, user.id),
+    };
   }
 
   async inviteInfo(inviteToken: string) {

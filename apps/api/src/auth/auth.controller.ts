@@ -8,6 +8,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SendLoginLinkDto } from './dto/send-login-link.dto';
 import { LoginWithLinkDto } from './dto/login-with-link.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -60,5 +61,17 @@ export class AuthController {
       throw new UnauthorizedException('Missing bearer token');
     }
     return this.authService.me(token);
+  }
+
+  @Post('set-password')
+  setPassword(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() dto: SetPasswordDto,
+  ) {
+    const token = authorization?.replace(/^Bearer\s+/i, '').trim();
+    if (!token) {
+      throw new UnauthorizedException('Missing bearer token');
+    }
+    return this.authService.setPassword(token, dto);
   }
 }

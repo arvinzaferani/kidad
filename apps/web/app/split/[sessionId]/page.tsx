@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { AppShell, Card, Placeholder } from '../../components/ui';
 import { StaggerItem } from '../../components/page-transition';
+import { ModalPortal } from '../../components/modal-portal';
 import { ClockIcon } from '../../components/icons';
 import { useAuthMe } from '../../../lib/auth/hooks';
 import { getApiError } from '../../../lib/auth/hooks';
@@ -231,7 +232,7 @@ export default function SplitSessionPage() {
               }
             >
               <div className="stack-qr">
-                <SplitQr value={session.inviteToken} />
+                <SplitQr value={`${process.env.FRONTEND_ORIGIN}/split/join/${session.inviteToken}`} />
                 <div className="grid-two">
                   <button type="button" className="btn btn-primary" onClick={copyLink}>
                     {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
@@ -354,6 +355,7 @@ export default function SplitSessionPage() {
           </Card>
 
           {formOpen && session.status === 'ACTIVE' && session.isHost ? (
+            <ModalPortal>
             <div className="modal-root" role="dialog" aria-modal="true" aria-labelledby="add-expense-title">
               <button type="button" className="modal-backdrop" aria-label="بستن" onClick={() => setFormOpen(false)} />
               <div className="modal-card card">
@@ -466,6 +468,7 @@ export default function SplitSessionPage() {
                 </form>
               </div>
             </div>
+            </ModalPortal>
           ) : null}
         </>
       )}

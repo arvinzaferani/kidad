@@ -28,6 +28,7 @@ import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { CreateGuestMemberDto } from './dto/create-guest-member.dto';
 import { SettlementEngine } from '../domain/settlement/settlement.service';
 import { buildPaginated, toSkip } from '../common/pagination';
+import { requireCompletedAccount } from '../users/account-completion.guard';
 
 @Injectable()
 export class GroupsService {
@@ -55,6 +56,7 @@ export class GroupsService {
     let membershipByGroup = new Map<string, GroupMember>();
 
     if (userId) {
+      await requireCompletedAccount(this.usersRepository, userId);
       const memberships = await this.groupMembersRepository.find({
         where: { userId },
         select: { id: true, groupId: true, userId: true },
@@ -106,6 +108,7 @@ export class GroupsService {
     const { creatorId, ...rest } = data;
 
     if (creatorId) {
+      await requireCompletedAccount(this.usersRepository, creatorId);
       const creator = await this.usersRepository.findOne({ where: { id: creatorId } });
       if (!creator) {
         throw new NotFoundException('Creator user not found');
@@ -188,6 +191,7 @@ export class GroupsService {
         : undefined,
       members: group.members.map((member) => {
         const balance = this.round2(balanceMap[member.id] ?? 0);
+        const isRequesterMember = Boolean(myMember);
         return {
           id: member.id,
           userId: member.userId,
@@ -197,6 +201,8 @@ export class GroupsService {
           email: member.user?.email ?? member.guestEmail,
           phone: member.user?.phone ?? member.guestPhone,
           avatarUrl: member.user?.avatarUrl,
+          cardNumber: isRequesterMember ? (member.user?.cardNumber ?? null) : undefined,
+          shaba: isRequesterMember ? (member.user?.shaba ?? null) : undefined,
           settlement: {
             amount: Math.abs(balance),
             status: this.balanceStatus(balance),
@@ -215,6 +221,7 @@ export class GroupsService {
   }
 
   async invite(groupId: string, data: CreateInvitationDto) {
+    await requireCompletedAccount(this.usersRepository, data.inviterId);
     const group = await this.groupsRepository.findOne({ where: { id: groupId } });
     if (!group) {
       throw new NotFoundException('Group not found');
@@ -318,6 +325,7 @@ export class GroupsService {
     invitationId: string,
     userId: string,
   ) {
+    await requireCompletedAccount(this.usersRepository, userId);
     const invitation = await this.invitationsRepository.findOne({
       where: {
         id: invitationId,
@@ -364,6 +372,7 @@ export class GroupsService {
     invitationId: string,
     userId: string,
   ) {
+    await requireCompletedAccount(this.usersRepository, userId);
     const invitation = await this.invitationsRepository.findOne({
       where: {
         id: invitationId,
@@ -400,6 +409,7 @@ export class GroupsService {
   }
 
   async join(id: string, userId: string) {
+    await requireCompletedAccount(this.usersRepository, userId);
     await this.groupMembersRepository.save({
       groupId: id,
       userId,
@@ -410,11 +420,13 @@ export class GroupsService {
   }
 
   async leave(id: string, userId: string) {
+    await requireCompletedAccount(this.usersRepository, userId);
     await this.groupMembersRepository.delete({ groupId: id, userId });
     return { groupId: id, left: true };
   }
 
   async addFriendToGroup(groupId: string, actorId: string, friendId: string) {
+    await requireCompletedAccount(this.usersRepository, actorId);
     if (actorId === friendId) {
       throw new BadRequestException('Cannot add yourself as friend');
     }

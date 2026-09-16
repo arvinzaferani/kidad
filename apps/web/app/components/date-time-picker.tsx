@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ModalPortal } from './modal-portal';
 
 type DateTimePickerProps = {
   id?: string;
@@ -178,6 +179,7 @@ export function PersianDateTimePicker({
   const [parts, setParts] = useState(parsed);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const labelId = id ? `${id}-label` : undefined;
 
   useEffect(() => {
@@ -186,7 +188,10 @@ export function PersianDateTimePicker({
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const insideContainer = containerRef.current?.contains(target);
+      const insideModal = modalRef.current?.contains(target);
+      if (!insideContainer && !insideModal) {
         setOpen(false);
       }
     };
@@ -249,7 +254,8 @@ export function PersianDateTimePicker({
       </button>
 
       {open ? (
-        <div className="persian-picker-modal-root" role="dialog" aria-modal="true" aria-labelledby={labelId}>
+        <ModalPortal>
+        <div ref={modalRef} className="persian-picker-modal-root" role="dialog" aria-modal="true" aria-labelledby={labelId}>
           <button
             type="button"
             className="modal-backdrop"
@@ -329,6 +335,7 @@ export function PersianDateTimePicker({
             </button>
           </div>
         </div>
+        </ModalPortal>
       ) : null}
 
       {/* {jalaliPreview ? <p className="field-hint">{jalaliPreview}</p> : null} */}

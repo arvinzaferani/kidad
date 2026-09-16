@@ -38,6 +38,15 @@ export class UsersService {
       data.avatarUrl !== undefined ? data.avatarUrl.trim() || undefined : existing.avatarUrl;
     const emailChanged = nextEmail !== existing.email;
 
+    const nextCardNumber =
+      data.cardNumber !== undefined
+        ? data.cardNumber.trim() || null
+        : existing.cardNumber ?? null;
+    const nextShaba =
+      data.shaba !== undefined
+        ? data.shaba.trim().toUpperCase() || null
+        : existing.shaba ?? null;
+
     if (!nextEmail && !nextPhone) {
       throw new BadRequestException('At least email or phone is required');
     }
@@ -68,14 +77,33 @@ export class UsersService {
       email: nextEmail,
       phone: nextPhone,
       avatarUrl: nextAvatar,
+      cardNumber: nextCardNumber,
+      shaba: nextShaba,
       isEmailVerified: emailChanged && nextEmail ? true : existing.isEmailVerified,
     });
 
-    return this.toSafeUser(user);
+    return this.toSafeUserOwn(user);
   }
 
   private toSafeUser(user: User) {
-    const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
+    const {
+      passwordHash: _passwordHash,
+      cardNumber: _cardNumber,
+      shaba: _shaba,
+      ...safeUser
+    } = user;
+    return {
+      ...safeUser,
+      status: user.status,
+      hasPassword: Boolean(user.passwordHash),
+    };
+  }
+
+  private toSafeUserOwn(user: User) {
+    return {
+      ...this.toSafeUser(user),
+      cardNumber: user.cardNumber,
+      shaba: user.shaba,
+    };
   }
 }

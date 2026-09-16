@@ -6,6 +6,15 @@ import { useSearchParams } from 'next/navigation';
 import { AppShell, Card } from '../components/ui';
 import { getApiError, useLoginWithLink } from '../../lib/auth/hooks';
 
+function safeNextPath(raw: string | null): string {
+  const fallback = '/dashboard';
+  if (!raw) return fallback;
+  if (!raw.startsWith('/')) return fallback;
+  if (raw.startsWith('//')) return fallback;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) return fallback;
+  return raw;
+}
+
 function EmailLoginContent() {
   const searchParams = useSearchParams();
   const loginWithLinkMutation = useLoginWithLink();
@@ -14,6 +23,10 @@ function EmailLoginContent() {
 
   const userId = useMemo(() => searchParams.get('userId') ?? '', [searchParams]);
   const token = useMemo(() => searchParams.get('token') ?? '', [searchParams]);
+  const nextPath = useMemo(
+    () => safeNextPath(searchParams.get('next')),
+    [searchParams],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -27,9 +40,9 @@ function EmailLoginContent() {
       try {
         await loginWithLinkMutation.mutateAsync({ userId, token });
         if (cancelled) return;
-        setResultMessage('ورود با موفقیت انجام شد. در حال انتقال به داشبورد...');
+        setResultMessage('ورود با موفقیت انجام شد. در حال انتقال...');
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          window.location.href = nextPath;
         }, 900);
       } catch (mutationError) {
         if (cancelled) return;
@@ -42,7 +55,7 @@ function EmailLoginContent() {
     return () => {
       cancelled = true;
     };
-  }, [userId, token]);
+  }, [userId, token, nextPath]);
 
   return (
     <AppShell title="ورود با لینک ایمیل" subtitle="در حال بررسی لینک ورود...">

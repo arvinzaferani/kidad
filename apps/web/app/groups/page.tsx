@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { AppShell, Card, Placeholder } from '../components/ui';
 import { StaggerItem } from '../components/page-transition';
+import { ModalPortal } from '../components/modal-portal';
 import { getApiError, useAuthMe } from '../../lib/auth/hooks';
 import {
   GroupMemberMode,
@@ -12,6 +13,7 @@ import {
   useGroups,
 } from '../../lib/groups/hooks';
 import { useAlert } from '../providers/alert-provider';
+import { RequireCompletedAccount } from '../providers/account-completion-provider';
 
 const formatMoney = (value: number, currency: 'TOMAN' | 'RIAL') =>
   `${new Intl.NumberFormat('fa-IR').format(Math.round(value))} ${currency === 'TOMAN' ? 'تومان' : 'ریال'}`;
@@ -62,6 +64,14 @@ const resizeGroupImage = (file: File) =>
   });
 
 export default function GroupsPage() {
+  return (
+    <RequireCompletedAccount feature="گروه‌ها">
+      <GroupsContent />
+    </RequireCompletedAccount>
+  );
+}
+
+function GroupsContent() {
   const { showAlert } = useAlert();
   const { data: me } = useAuthMe();
   const [page, setPage] = useState(1);
@@ -217,6 +227,7 @@ export default function GroupsPage() {
       </Card>
 
       {modalOpen ? (
+        <ModalPortal>
         <div className="modal-root" role="dialog" aria-modal="true" aria-label="ساخت گروه جدید">
           <button type="button" className="modal-backdrop" onClick={() => setModalOpen(false)} />
           <div className="modal-card card">
@@ -298,6 +309,7 @@ export default function GroupsPage() {
             </form>
           </div>
         </div>
+        </ModalPortal>
       ) : null}
 
       {error ? <p style={{ margin: 0, color: '#dc2626' }}>{error}</p> : null}

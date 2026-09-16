@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { GroupMember } from './group-member.entity';
+import { UserStatus } from './enums';
 import { ExpensePayer } from './expense-payer.entity';
 import { ExpenseSplit } from './expense-split.entity';
 import { Settlement } from './settlement.entity';
@@ -30,14 +31,27 @@ export class User {
   @Column({ default: false })
   isBanned!: boolean;
 
-  @Column()
-  passwordHash!: string;
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status!: UserStatus;
+
+  @Column({ nullable: true })
+  passwordHash?: string;
 
   @Column()
   nickname!: string;
 
   @Column({ nullable: true })
   avatarUrl?: string;
+
+  @Column({ name: 'card_number', type: 'varchar', length: 16, nullable: true })
+  cardNumber?: string;
+
+  @Column({ name: 'shaba', type: 'varchar', length: 26, nullable: true })
+  shaba?: string;
 
   @CreateDateColumn()
   createdAt!: Date;

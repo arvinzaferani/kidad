@@ -14,6 +14,7 @@ import {
 import { Brackets, Repository } from 'typeorm';
 import { CreateFriendRequestDto } from './dto/create-friend-request.dto';
 import { buildPaginated, toSkip } from '../common/pagination';
+import { requireCompletedAccount } from '../users/account-completion.guard';
 
 @Injectable()
 export class FriendsService {
@@ -27,6 +28,7 @@ export class FriendsService {
   ) {}
 
   async listFriends(userId: string, page = 1, limit = 10) {
+    await requireCompletedAccount(this.usersRepository, userId);
     const qb = this.friendRequestsRepository
       .createQueryBuilder('fr')
       .leftJoinAndSelect('fr.requester', 'requester')
@@ -48,9 +50,14 @@ export class FriendsService {
     const items = rows.map((row) => {
       const friend =
         row.requesterId === userId ? row.addressee : row.requester;
+      const safe = this.safeUser(friend);
       return {
         friendshipId: row.id,
-        user: this.safeUser(friend),
+        user: {
+          ...safe,
+          cardNumber: friend.cardNumber ?? null,
+          shaba: friend.shaba ?? null,
+        },
       };
     });
 
@@ -58,6 +65,7 @@ export class FriendsService {
   }
 
   async listPendingIncoming(userId: string, page = 1, limit = 10) {
+    await requireCompletedAccount(this.usersRepository, userId);
     const [rows, total] = await this.friendRequestsRepository.findAndCount({
       where: {
         addresseeId: userId,
@@ -72,13 +80,14 @@ export class FriendsService {
     const items = rows.map((row) => ({
       id: row.id,
       createdAt: row.createdAt,
-      requester: this.safeUser(row.requester),
+      requester: this.safeUserForRequest(row.requester),
     }));
 
     return buildPaginated(items, total, page, limit);
   }
 
   async createRequest(payload: CreateFriendRequestDto) {
+    await requireCompletedAccount(this.usersRepository, payload.requesterId);
     const requester = await this.usersRepository.findOne({
       where: { id: payload.requesterId },
     });
@@ -142,6 +151,7 @@ export class FriendsService {
   }
 
   async acceptRequest(requestId: string, userId: string) {
+    await requireCompletedAccount(this.usersRepository, userId);
     const request = await this.friendRequestsRepository.findOne({
       where: {
         id: requestId,
@@ -167,6 +177,7 @@ export class FriendsService {
   }
 
   async declineRequest(requestId: string, userId: string) {
+    await requireCompletedAccount(this.usersRepository, userId);
     const request = await this.friendRequestsRepository.findOne({
       where: {
         id: requestId,
@@ -192,6 +203,7 @@ export class FriendsService {
   }
 
   async removeFriend(friendshipId: string, userId: string) {
+    await requireCompletedAccount(this.usersRepository, userId);
     const request = await this.friendRequestsRepository.findOne({
       where: { id: friendshipId, status: FriendRequestStatus.ACCEPTED },
     });
@@ -234,6 +246,16 @@ export class FriendsService {
 
   private safeUser(user: User) {
     const { passwordHash: _, ...safe } = user;
+    return safe;
+  }
+
+  private safeUserForRequest(user: User) {
+    const {
+      passwordHash: _passwordHash,
+      cardNumber: _cardNumber,
+      shaba: _shaba,
+      ...safe
+    } = user;
     return safe;
   }
 

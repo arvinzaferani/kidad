@@ -12,6 +12,7 @@ import {
   EmailVerificationToken,
   PasswordResetToken,
   User,
+  UserStatus,
 } from '../database/entities';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
@@ -24,6 +25,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SendLoginLinkDto } from './dto/send-login-link.dto';
 import { LoginWithLinkDto } from './dto/login-with-link.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -84,7 +86,11 @@ export class AuthService {
       where: { email: dto.email.trim().toLowerCase() },
     });
 
-    if (!user || !verifyPassword(dto.password, user.passwordHash)) {
+    if (
+      !user ||
+      !user.passwordHash ||
+      !verifyPassword(dto.password, user.passwordHash)
+    ) {
       throw new UnauthorizedException('اطلاعات ورود نامعتبر است.');
     }
     if (user.isBanned) {
@@ -94,6 +100,36 @@ export class AuthService {
       user: this.toSafeUser(user),
       token: this.createToken(user.id),
       requiresEmailVerification: false,
+    };
+  }
+
+  async setPassword(token: string, dto: SetPasswordDto) {
+    const userId = this.parseToken(token);
+    if (!userId) {
+      throw new UnauthorizedException('توکن نامعتبر است.');
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('کاربر پیدا نشد.');
+    }
+    if (user.isBanned) {
+      throw new UnauthorizedException('حساب کاربری شما مسدود شده است.');
+    }
+
+    await this.usersRepository.update(
+      { id: user.id },
+      {
+        passwordHash: hashPassword(dto.password),
+        status: UserStatus.ACTIVE,
+      },
+    );
+
+    const updatedUser = await this.usersRepository.findOne({
+      where: { id: user.id },
+    });
+    return {
+      user: updatedUser ? this.toSafeUser(updatedUser) : this.toSafeUser(user),
     };
   }
 
@@ -161,7 +197,7 @@ export class AuthService {
     if (!user) return { sent: true };
 
     try {
-      await this.issueEmailLoginToken(user);
+      await this.issueEmailLoginToken(user, dto.next);
     } catch (error) {
       this.logger.error(
         `Failed to send email login link to ${user.email}: ${(error as Error).message}`,
@@ -392,7 +428,7 @@ export class AuthService {
     });
   }
 
-  private async issueEmailLoginToken(user: User) {
+  private async issueEmailLoginToken(user: User, next?: string) {
     if (!user.email) {
       throw new BadRequestException('حساب کاربر ایمیل ندارد.');
     }
@@ -416,7 +452,10 @@ export class AuthService {
     );
 
     const baseUrl = this.getBaseWebUrl();
-    const loginUrl = `${baseUrl}/email-login?userId=${encodeURIComponent(user.id)}&token=${encodeURIComponent(rawToken)}`;
+    const nextParam = next
+      ? `&next=${encodeURIComponent(next)}`
+      : '';
+    const loginUrl = `${baseUrl}/email-login?userId=${encodeURIComponent(user.id)}&token=${encodeURIComponent(rawToken)}${nextParam}`;
 
     await this.authMailerService.sendMagicLoginEmail({
       to: user.email,
@@ -426,7 +465,11 @@ export class AuthService {
   }
 
   private toSafeUser(user: User) {
-    const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
+    const { passwordHash: _passwordHash, ...safeUser } = user;
+    return {
+      ...safeUser,
+      status: user.status,
+      hasPassword: Boolean(user.passwordHash),
+    };
   }
 }

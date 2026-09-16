@@ -9,6 +9,7 @@ import {
   useCreateSettlement,
 } from '../../../../lib/groups/hooks';
 import { useAlert } from '../../../providers/alert-provider';
+import { RequireCompletedAccount } from '../../../providers/account-completion-provider';
 
 interface SettlePageProps {
   params: { groupId: string };
@@ -18,6 +19,14 @@ const formatMoney = (value: number, currency: 'TOMAN' | 'RIAL') =>
   `${new Intl.NumberFormat('fa-IR').format(Math.round(value))} ${currency === 'TOMAN' ? 'تومان' : 'ریال'}`;
 
 export default function SettlePage({ params }: SettlePageProps) {
+  return (
+    <RequireCompletedAccount feature="گروه">
+      <SettleContent params={params} />
+    </RequireCompletedAccount>
+  );
+}
+
+function SettleContent({ params }: SettlePageProps) {
   const { showAlert } = useAlert();
   const { data: me } = useAuthMe();
   const { data: group, isLoading: groupLoading } = useGroup(params.groupId, me?.id);

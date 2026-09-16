@@ -12,8 +12,12 @@ export interface SafeUser {
   isEmailVerified: boolean;
   isAdmin: boolean;
   isBanned: boolean;
+  status: 'ONBOARDING' | 'ACTIVE';
+  hasPassword: boolean;
   nickname: string;
   avatarUrl?: string;
+  cardNumber?: string | null;
+  shaba?: string | null;
   createdAt: string;
 }
 
@@ -121,8 +125,11 @@ export function useResetPassword() {
 
 export function useSendLoginLink() {
   return useMutation({
-    mutationFn: async (payload: { email: string }) => {
-      const { data } = await apiClient.post<{ sent: boolean }>('/auth/send-login-link', payload);
+    mutationFn: async (payload: { email: string; next?: string }) => {
+      const { data } = await apiClient.post<{ sent: boolean }>(
+        '/auth/send-login-link',
+        payload,
+      );
       return data;
     },
   });
@@ -183,6 +190,27 @@ export function useLogout() {
     clearAuthToken();
     queryClient.removeQueries({ queryKey: ['auth'] });
   };
+}
+
+export function useSetPassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { password: string }) => {
+      const { data } = await apiClient.post<{ user: SafeUser }>(
+        '/auth/set-password',
+        payload,
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['auth', 'me'], data.user);
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    },
+    meta: {
+      humanErrorMessage: 'تنظیم رمز عبور ناموفق بود',
+    },
+  });
 }
 
 export { getApiError };

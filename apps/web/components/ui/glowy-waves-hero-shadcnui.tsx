@@ -288,14 +288,14 @@ export function GlowyWavesHero() {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', borderRadius: '9999px', border: '1px solid color-mix(in srgb, var(--primary) 40%, transparent)', padding: '0.5rem 1rem', backdropFilter: 'blur(4px)', marginBottom: '1.5rem', backgroundColor: 'var(--background)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--foreground)', opacity: 0.7 }}
           >
             <Sparkles style={{ width: '1rem', height: '1rem', color: 'var(--primary)' }} aria-hidden="true" />
-            کی‌داد؟ · نسخه وب
+            کی‌داد · نسخه وب
           </motion.div>
 
           <motion.h1
             variants={itemVariants}
             style={{ marginBottom: '1.5rem', fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: 'var(--foreground)', fontWeight: 600, letterSpacing: '-0.025em' }}
           >
-            خرج‌های مشترک را{' '}
+            خرج‌های مشترک رو{' '}
             <span style={{ background: 'linear-gradient(to right, var(--primary), color-mix(in srgb, var(--primary) 60%, transparent), color-mix(in srgb, var(--foreground) 80%, transparent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               ساده و شفاف
             </span>{' '}
@@ -334,6 +334,7 @@ export function GlowyWavesHero() {
           animate="visible"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', borderRadius: '1rem', border: '1px solid color-mix(in srgb, var(--border) 30%, transparent)', padding: '1.5rem', backdropFilter: 'blur(4px)', backgroundColor: 'var(--background)' }}
         >
+          <div className='motion-down'>
           {highlights.map((item, i) => (
             <motion.div
               key={item.title}
@@ -350,6 +351,7 @@ export function GlowyWavesHero() {
               </div>
             </motion.div>
           ))}
+          </div>
         </motion.div>
       </div>
     </section>

@@ -1,3 +1,8 @@
+export enum UserStatus {
+  ONBOARDING = 'ONBOARDING',
+  ACTIVE = 'ACTIVE',
+}
+
 export enum Currency {
   TOMAN = 'TOMAN',
   RIAL = 'RIAL',

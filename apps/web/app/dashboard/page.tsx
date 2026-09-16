@@ -8,11 +8,20 @@ import { useInbox } from '../../lib/inbox/hooks';
 import { useGroups } from '../../lib/groups/hooks';
 import { useFriends, useIncomingFriendRequests } from '../../lib/friends/hooks';
 import { useDashboardActivity } from '../../lib/dashboard/hooks';
+import { RequireCompletedAccount } from '../providers/account-completion-provider';
 
 const formatMoney = (value: number) =>
   `${new Intl.NumberFormat('fa-IR').format(Math.round(value))} تومان`;
 
 export default function DashboardPage() {
+  return (
+    <RequireCompletedAccount feature="داشبورد">
+      <DashboardContent />
+    </RequireCompletedAccount>
+  );
+}
+
+function DashboardContent() {
   const { data: me, isLoading, isError } = useAuthMe();
   const { data: inbox } = useInbox(me?.id, 1, 1);
   const { data: groups } = useGroups(me?.id, 1, 100);

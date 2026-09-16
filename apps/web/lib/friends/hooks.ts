@@ -10,6 +10,8 @@ export interface FriendUser {
   email?: string;
   phone?: string;
   avatarUrl?: string;
+  cardNumber?: string | null;
+  shaba?: string | null;
 }
 
 export interface FriendListItem {

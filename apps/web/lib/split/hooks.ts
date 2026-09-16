@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { getApiError } from '../auth/hooks';
+import { setAuthToken } from '../auth/token';
 
 export type SplitSessionStatus = 'ACTIVE' | 'CLOSED' | 'COMPLETED' | 'CANCELLED';
 export type SplitCurrency = 'TOMAN' | 'RIAL';
@@ -133,6 +134,34 @@ export function useJoinSplit(inviteToken: string) {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['split', 'session', data.id], data);
+    },
+  });
+}
+
+export interface GuestJoinResult {
+  requiresMagicLink: boolean;
+  email?: string;
+  token?: string;
+  session?: SplitSessionView;
+}
+
+export function useGuestJoinSplit(inviteToken: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { nickname: string; email: string }) => {
+      const { data } = await apiClient.post<GuestJoinResult>(
+        `/split/join/${inviteToken}/guest`,
+        payload,
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      if (!data.requiresMagicLink && data.token && data.session) {
+        setAuthToken(data.token);
+        queryClient.setQueryData(['split', 'session', data.session.id], data.session);
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      }
     },
   });
 }

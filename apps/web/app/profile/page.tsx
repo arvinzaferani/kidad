@@ -6,12 +6,14 @@ import { ThemeToggle } from '../components/theme-toggle';
 import { getApiError, useAuthMe, useLogout, useResendVerification } from '../../lib/auth/hooks';
 import { useUpdateProfile } from '../../lib/users/hooks';
 import { useAlert } from '../providers/alert-provider';
+import { useAccountCompletion } from '../providers/account-completion-provider';
 
 export default function ProfilePage() {
   const { data: me, isLoading } = useAuthMe();
   const updateProfileMutation = useUpdateProfile();
   const resendVerificationMutation = useResendVerification();
   const { showAlert } = useAlert();
+  const { openCompletion } = useAccountCompletion();
   const logout = useLogout();
 
   const [nickname, setNickname] = useState('');
@@ -196,6 +198,18 @@ export default function ProfilePage() {
 
       <Card title="تنظیمات">
         <div className="stack">
+          {me?.status === 'ONBOARDING' ? (
+            <div className="settings-row">
+              <span className="settings-row-label">وضعیت حساب</span>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => openCompletion()}
+              >
+                تنظیم رمز عبور
+              </button>
+            </div>
+          ) : null}
           <div className="settings-row">
             <span className="settings-row-label">حالت رنگ (تم)</span>
             <ThemeToggle />

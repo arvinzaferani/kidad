@@ -33,6 +33,8 @@ export interface GroupMemberSummary {
   email?: string;
   phone?: string;
   avatarUrl?: string;
+  cardNumber?: string | null;
+  shaba?: string | null;
   settlement: {
     amount: number;
     status: SettlementStatus;

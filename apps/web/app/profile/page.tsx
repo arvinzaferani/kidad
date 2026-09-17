@@ -7,6 +7,7 @@ import { getApiError, useAuthMe, useLogout, useResendVerification } from '../../
 import { useUpdateProfile } from '../../lib/users/hooks';
 import { useAlert } from '../providers/alert-provider';
 import { useAccountCompletion } from '../providers/account-completion-provider';
+import { detectBank } from '../../lib/utils/bank';
 
 export default function ProfilePage() {
   const { data: me, isLoading } = useAuthMe();
@@ -21,6 +22,8 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarName, setAvatarName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [shaba, setShaba] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +34,8 @@ export default function ProfilePage() {
     setPhone(me.phone ?? '');
     setAvatarUrl(me.avatarUrl ?? '');
     setAvatarName('');
+    setCardNumber(me.cardNumber ?? '');
+    setShaba(me.shaba ?? '');
   }, [me]);
 
   const onUploadAvatar = (event: ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +79,8 @@ export default function ProfilePage() {
         email: email.trim() || undefined,
         phone: phone.trim() || undefined,
         avatarUrl: avatarUrl.trim() || undefined,
+        cardNumber: cardNumber.replace(/[\s-]/g, ''),
+        shaba: shaba.replace(/[\s-]/g, '').toUpperCase(),
       });
       setMessage('پروفایل با موفقیت ذخیره شد.');
       showAlert('پروفایل با موفقیت ذخیره شد.', 'success');
@@ -170,6 +177,31 @@ export default function ProfilePage() {
               onChange={(event) => setPhone(event.target.value)}
               placeholder="0912xxxxxxx"
             />
+
+            <label className="label">شماره کارت (اختیاری)</label>
+            <input
+              className="field"
+              value={cardNumber}
+              onChange={(event) => setCardNumber(event.target.value)}
+              inputMode="numeric"
+              placeholder="6037xxxxxxxxxxxx"
+            />
+            {cardNumber.replace(/\D/g, '').length >= 6 ? (
+              <p style={{ margin: '-0.5rem 0 0', fontSize: '0.8rem', opacity: 0.8 }}>
+                بانک: {detectBank(cardNumber) ?? 'نامشخص'}
+              </p>
+            ) : null}
+
+            <label className="label">شماره شبا (اختیاری)</label>
+            <input
+              className="field"
+              value={shaba}
+              onChange={(event) => setShaba(event.target.value)}
+              placeholder="IRxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
+            <p style={{ margin: '-0.5rem 0 0', fontSize: '0.8rem', opacity: 0.7 }}>
+              این اطلاعات فقط برای خودت، دوستان و اعضای گروه نمایش داده می‌شود.
+            </p>
 
             <label className="label">آپلود آواتار</label>
             <input className="field" type="file" accept="image/*" onChange={onUploadAvatar} />

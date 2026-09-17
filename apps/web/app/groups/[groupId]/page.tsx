@@ -6,6 +6,7 @@ import { PersianDateTimePicker } from '../../components/date-time-picker';
 import { PlusIcon, ClockIcon } from '../../components/icons';
 import { StaggerItem } from '../../components/page-transition';
 import { ModalPortal } from '../../components/modal-portal';
+import { ContactDetailModal } from '../../components/contact-detail-modal';
 import { getApiError, useAuthMe } from '../../../lib/auth/hooks';
 import {
   CreateSettlementPayload,
@@ -127,6 +128,7 @@ function GroupContent({ params }: GroupPageProps) {
   const [friendPicker, setFriendPicker] = useState('');
   const [friendModalOpen, setFriendModalOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [contactMember, setContactMember] = useState<GroupMemberSummary | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const { data: settlements } = useSettlements(params.groupId, settlementsPage, 8);
   const { data: expenses } = useGroupExpenses(params.groupId, expensesPage, 8);
@@ -575,6 +577,13 @@ function GroupContent({ params }: GroupPageProps) {
                       {member.isGuest ? <span className="you-badge" style={{ marginRight: '0.4rem' }}>مهمان</span> : null}
                     </p>
                     <p className="member-contact">{member.phone || member.email || 'بدون اطلاعات تماس'}</p>
+                    <button
+                      type="button"
+                      className="member-contact-link"
+                      onClick={() => setContactMember(member)}
+                    >
+                      مشاهده کارت و شبا
+                    </button>
                   </div>
                 </div>
                 <div className="member-actions">
@@ -859,6 +868,23 @@ function GroupContent({ params }: GroupPageProps) {
       </Card>
 
       {formError ? <p style={{ margin: 0, color: '#dc2626' }}>{formError}</p> : null}
+
+      {contactMember ? (
+        <ContactDetailModal
+          info={{
+            id: contactMember.id,
+            nickname: contactMember.nickname,
+            avatarUrl: contactMember.avatarUrl,
+            email: contactMember.email,
+            phone: contactMember.phone,
+            cardNumber: contactMember.cardNumber ?? null,
+            shaba: contactMember.shaba ?? null,
+          }}
+          label={contactMember.isGuest ? 'عضو مهمان' : 'عضو گروه'}
+          onClose={() => setContactMember(null)}
+          onCopy={(text) => showAlert(`«${text}» کپی شد.`, 'success')}
+        />
+      ) : null}
     </AppShell>
   );
 }

@@ -948,6 +948,21 @@ a {
   opacity: 0.72;
 }
 
+.member-contact-link {
+  margin-top: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.member-contact-link:hover {
+  opacity: 0.8;
+}
+
 .split-grid {
   display: grid;
   gap: 0.55rem;

@@ -1,10 +1,12 @@
 'use client';
 
 import { ContactDetailModal } from '../components/contact-detail-modal';
+import { detectBank } from '../../lib/utils/bank';
 import { useState } from 'react';
 import { AppShell, Card, Placeholder } from '../components/ui';
 import { getApiError, useAuthMe } from '../../lib/auth/hooks';
 import {
+  FriendUser,
   useCreateFriendRequest,
   useFriends,
   useIncomingFriendRequests,
@@ -27,6 +29,7 @@ function FriendsContent() {
   const { showAlert } = useAlert();
   const [friendsPage, setFriendsPage] = useState(1);
   const [incomingPage, setIncomingPage] = useState(1);
+  const [selectedContact, setSelectedContact] = useState<FriendUser | null>(null);
   const [identifier, setIdentifier] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -180,7 +183,19 @@ function FriendsContent() {
         ) : null}
         <div className="stack">
           {(friends?.items ?? []).map((friend) => (
-            <div key={friend.friendshipId} className="member-row">
+              <div
+                key={friend.friendshipId}
+                className="member-row"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedContact(friend.user)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelectedContact(friend.user);
+                  }
+                }}
+              >
               <div className="member-main">
                 <div className="member-avatar">
                   {friend.user.avatarUrl ? (
@@ -230,6 +245,23 @@ function FriendsContent() {
 
       {message ? <p style={{ margin: 0, color: 'var(--accent)' }}>{message}</p> : null}
       {error ? <p style={{ margin: 0, color: '#dc2626' }}>{error}</p> : null}
+
+      {selectedContact ? (
+        <ContactDetailModal
+          info={{
+            id: selectedContact.id,
+            nickname: selectedContact.nickname,
+            avatarUrl: selectedContact.avatarUrl,
+            email: selectedContact.email,
+            phone: selectedContact.phone,
+            cardNumber: selectedContact.cardNumber ?? null,
+            shaba: selectedContact.shaba ?? null,
+          }}
+          label="شناسه دوست"
+          onClose={() => setSelectedContact(null)}
+          onCopy={(text) => showAlert(`«${text}» کپی شد.`, 'success')}
+        />
+      ) : null}
     </AppShell>
   );
 }

@@ -71,16 +71,17 @@ export class UsersService {
       }
     }
 
-    const user = await this.usersRepository.save({
-      id,
+    Object.assign(existing, {
       nickname: nextNickname,
       email: nextEmail,
       phone: nextPhone,
       avatarUrl: nextAvatar,
+      isEmailVerified: emailChanged && nextEmail ? true : existing.isEmailVerified,
       cardNumber: nextCardNumber,
       shaba: nextShaba,
-      isEmailVerified: emailChanged && nextEmail ? true : existing.isEmailVerified,
     });
+
+    const user = await this.usersRepository.save(existing);
 
     return this.toSafeUserOwn(user);
   }

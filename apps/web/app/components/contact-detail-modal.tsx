@@ -35,7 +35,7 @@ export function ContactDetailModal({
   onClose,
   onCopy,
 }: Props) {
-  const [copiedKey, setCopiedKey] = useState<string | null>(nullSineba);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleCopy = async (key: string, value: string) => {
     await copyText(value);
@@ -47,7 +47,7 @@ export function ContactDetailModal({
   const bankName = info.cardNumber ? detectBank(info.cardNumber) : null;
 
   return (
-    <ModalPortal onClose={onClose}>
+    <ModalPortal>
       <div className="card modal-card" role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2 className="card-title">{title}</h2>

@@ -48,8 +48,20 @@ export function ContactDetailModal({
 
   return (
     <ModalPortal>
-      <div className="card modal-card" role="dialog" aria-modal="true">
-        <div className="modal-header">
+      <div
+        className="modal-root"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        <button
+          type="button"
+          className="modal-backdrop"
+          aria-label="بستن"
+          onClick={onClose}
+        />
+        <div className="modal-card card">
+          <div className="modal-header">
           <h2 className="card-title">{title}</h2>
           <button type="button" className="sidebar-close" aria-label="بستن" onClick={onClose}>
             ×
@@ -117,8 +129,9 @@ export function ContactDetailModal({
           </div>
 
           <p className="hint" style={{ margin: 0 }}>
-            این اطلاعات فقط برای خودت، دوستان و اعضای همان گروه نمایش داده میشود.
+            این اطلاعات فقط برای خودت، دوستان و اعضای همان گروه نمایش داده می‌شود.
           </p>
+        </div>
         </div>
       </div>
     </ModalPortal>

@@ -608,6 +608,7 @@ a {
   left: 24px;
   right: 24px;
   z-index: 40;
+  max-height: fit-content;
   border-radius: 26px;
   display: flex;
   align-items: stretch;

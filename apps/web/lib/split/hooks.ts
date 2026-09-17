@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
+import { PaginatedResponse } from '../api/pagination';
 import { getApiError } from '../auth/hooks';
 import { setAuthToken } from '../auth/token';
 
@@ -77,6 +78,32 @@ export interface SplitInviteInfo {
   memberCount: number;
 }
 
+export interface SplitSessionSummary {
+  id: string;
+  title?: string | null;
+  status: SplitSessionStatus;
+  isHost: boolean;
+  inviteToken: string;
+  createdAt: string;
+  memberCount: number;
+  expenseCount: number;
+  totalAmount: number;
+  currency: SplitCurrency;
+  myBalance: number;
+}
+
+export function useSplitSessions(page = 1, limit = 10) {
+  return useQuery({
+    queryKey: ['split', 'sessions', page, limit],
+    queryFn: async () => {
+      const { data } = await apiClient.get<
+        PaginatedResponse<SplitSessionSummary>
+      >('/split/sessions', { params: { page, limit } });
+      return data;
+    },
+  });
+}
+
 export function useSplitInviteInfo(inviteToken?: string) {
   return useQuery({
     queryKey: ['split', 'invite', inviteToken],
@@ -118,6 +145,7 @@ export function useCreateSplitSession() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['split', 'session', data.id], data);
+      queryClient.invalidateQueries({ queryKey: ['split', 'sessions'] });
     },
   });
 }
@@ -134,6 +162,7 @@ export function useJoinSplit(inviteToken: string) {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['split', 'session', data.id], data);
+      queryClient.invalidateQueries({ queryKey: ['split', 'sessions'] });
     },
   });
 }
@@ -161,6 +190,7 @@ export function useGuestJoinSplit(inviteToken: string) {
         setAuthToken(data.token);
         queryClient.setQueryData(['split', 'session', data.session.id], data.session);
         queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+        queryClient.invalidateQueries({ queryKey: ['split', 'sessions'] });
       }
     },
   });
@@ -199,6 +229,7 @@ export function useAddSplitExpense(sessionId: string) {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['split', 'session', data.id], data);
+      queryClient.invalidateQueries({ queryKey: ['split', 'sessions'] });
     },
   });
 }
@@ -215,6 +246,7 @@ export function useCloseSplitSession(sessionId: string) {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['split', 'session', data.id], data);
+      queryClient.invalidateQueries({ queryKey: ['split', 'sessions'] });
     },
   });
 }

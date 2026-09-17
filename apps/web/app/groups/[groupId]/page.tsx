@@ -413,14 +413,14 @@ function GroupContent({ params }: GroupPageProps) {
                     onChange={(event) => setGuestName(event.target.value)}
                     placeholder="مثلاً علی"
                   />
-                  <label className="label">ایمیل (اختیاری)</label>
+                  <label className="label">ایمیل </label>
                   <input
                     className="field"
                     value={guestEmail}
                     onChange={(event) => setGuestEmail(event.target.value)}
                     placeholder="example@email.com"
                   />
-                  <label className="label">شماره موبایل (اختیاری)</label>
+                  <label className="label">شماره موبایل </label>
                   <input
                     className="field"
                     value={guestPhone}

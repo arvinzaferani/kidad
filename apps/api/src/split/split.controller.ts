@@ -5,11 +5,13 @@ import {
   Headers,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { SplitService } from './split.service';
 import { CreateSplitSessionDto } from './dto/create-split-session.dto';
 import { CreateSplitExpenseDto } from './dto/create-split-expense.dto';
 import { JoinSplitAsGuestDto } from './dto/join-split-as-guest.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { parseRequestUserId } from './split-auth';
 
 @Controller('split')
@@ -43,6 +45,18 @@ export class SplitController {
     @Body() dto: JoinSplitAsGuestDto,
   ) {
     return this.splitService.joinAsGuest(inviteToken, dto);
+  }
+
+  @Get('sessions')
+  list(
+    @Headers('authorization') authorization: string | undefined,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.splitService.list(
+      parseRequestUserId(authorization),
+      query.page ?? 1,
+      query.limit ?? 10,
+    );
   }
 
   @Get('sessions/:sessionId')

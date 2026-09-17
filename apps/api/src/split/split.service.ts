@@ -10,6 +10,7 @@ import { randomBytes } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import {
+  Currency,
   SplitExpense,
   SplitExpenseParticipant,
   SplitExpensePayer,
@@ -20,6 +21,7 @@ import {
   User,
   UserStatus,
 } from '../database/entities';
+import { buildPaginated, toSkip } from '../common/pagination';
 import { SettlementEngine } from '../domain/settlement/settlement.service';
 import {
   distributeEvenly,
@@ -161,6 +163,71 @@ export class SplitService {
       },
       memberCount,
     };
+  }
+
+  async list(userId: string, page = 1, limit = 10) {
+    await this.requireUser(userId);
+    const [sessions, total] = await this.sessionsRepository
+      .createQueryBuilder('s')
+      .innerJoin(SplitMember, 'm', 'm.sessionId = s.id')
+      .where('m.userId = :userId', { userId })
+      .orderBy('s.createdAt', 'DESC')
+      .skip(toSkip(page, limit))
+      .take(limit)
+      .getManyAndCount();
+
+    const sessionIds = sessions.map((session) => session.id);
+    if (!sessionIds.length) {
+      return buildPaginated([], total, page, limit);
+    }
+
+    const memberRows = await this.membersRepository.find({
+      where: { sessionId: In(sessionIds) },
+    });
+    const memberCountBySession = new Map<string, number>();
+    for (const member of memberRows) {
+      memberCountBySession.set(
+        member.sessionId,
+        (memberCountBySession.get(member.sessionId) ?? 0) + 1,
+      );
+    }
+
+    const expenseRows = await this.expensesRepository.find({
+      where: { sessionId: In(sessionIds) },
+      relations: {
+        participants: { member: true },
+        payers: { member: true },
+      },
+    });
+    const expensesBySession = new Map<string, SplitExpense[]>();
+    for (const expense of expenseRows) {
+      const list = expensesBySession.get(expense.sessionId) ?? [];
+      list.push(expense);
+      expensesBySession.set(expense.sessionId, list);
+    }
+
+    const items = sessions.map((session) => {
+      const expenses = expensesBySession.get(session.id) ?? [];
+      const totalAmount = round2(
+        expenses.reduce((sum, expense) => sum + Number(expense.amount), 0),
+      );
+      const balances = this.computeBalances(expenses);
+      return {
+        id: session.id,
+        title: session.title ?? null,
+        status: session.status,
+        isHost: session.hostId === userId,
+        inviteToken: session.inviteToken,
+        createdAt: session.createdAt,
+        memberCount: memberCountBySession.get(session.id) ?? 0,
+        expenseCount: expenses.length,
+        totalAmount,
+        currency: expenses[0]?.currency ?? Currency.TOMAN,
+        myBalance: round2(balances[userId] ?? 0),
+      };
+    });
+
+    return buildPaginated(items, total, page, limit);
   }
 
   async join(inviteToken: string, userId: string) {

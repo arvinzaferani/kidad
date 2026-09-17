@@ -19,7 +19,7 @@
   --primary-foreground: #ffffff;
   --secondary: #eef1f5;
   --secondary-foreground: #1a1f2e;
-  --accent: #1f8d61;
+  --accent: #4ac0de;
   --accent-foreground: #ffffff;
   --muted: #eef1f5;
   --muted-foreground: #1a1f2e;
@@ -665,7 +665,7 @@ a {
   justify-content: center;
   align-items: center;
   gap:0.2rem;
-  box-shadow: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-shadow-light);
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-shadow-light), inset -3px -3px 12px #2d5351, inset 3px 3px 12px #77dcd8;
 
 }
 
@@ -894,7 +894,7 @@ a {
 .member-main {
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: start;
   align-items: center;
   gap: 0.55rem;
 }

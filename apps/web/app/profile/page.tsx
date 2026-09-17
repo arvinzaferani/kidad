@@ -178,7 +178,7 @@ export default function ProfilePage() {
               placeholder="0912xxxxxxx"
             />
 
-            <label className="label">شماره کارت (اختیاری)</label>
+            <label className="label">شماره کارت</label>
             <input
               className="field"
               value={cardNumber}
@@ -192,7 +192,7 @@ export default function ProfilePage() {
               </p>
             ) : null}
 
-            <label className="label">شماره شبا (اختیاری)</label>
+            <label className="label">شماره شبا</label>
             <input
               className="field"
               value={shaba}

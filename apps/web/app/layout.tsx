@@ -5,6 +5,7 @@ import { AlertProvider } from './providers/alert-provider';
 import { AccountCompletionProvider } from './providers/account-completion-provider';
 import { KeyboardDetector } from './components/keyboard-detector';
 import { ThemeMetaSync } from './components/theme-meta-sync';
+import { PwaKeyboardFix } from './components/pwa-keyboard-fix';
 
 export const metadata: Metadata = {
   title: 'کی‌داد؟',
@@ -55,6 +56,7 @@ export default function RootLayout({
       <body>
         <KeyboardDetector />
         <ThemeMetaSync />
+        <PwaKeyboardFix />
         <QueryProvider>
           <AlertProvider>
             <AccountCompletionProvider>{children}</AccountCompletionProvider>

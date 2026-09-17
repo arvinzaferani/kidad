@@ -46,18 +46,21 @@ function DashboardContent() {
 
   return (
     <AppShell title="داشبورد" subtitle="خلاصه وضعیت حساب‌ها">
-      <Card title="حساب کاربری">
+      <Card >
         {isLoading ? <p style={{ margin: 0 }}>در حال بارگذاری...</p> : null}
         {isError ? <p style={{ margin: 0, color: '#dc2626' }}>خواندن اطلاعات کاربر ناموفق بود.</p> : null}
         {me ? (
-          <div className="stack">
+          <div className="stack" style={{gap: "4px"}}>
             <p style={{ margin: 0 }}>
-              <strong>نام:</strong> {me.nickname}
+               {me.nickname} عزیز، خوش اومدی!
             </p>
-            <p style={{ margin: 0 }}>
-              <strong>شناسه ورود:</strong> {me.phone || me.email}
-            </p>
-            <button
+            {me.email && <p style={{ margin: 0 }}>
+              <strong>ایمیل: </strong> { me.email}
+            </p>}
+            {me.phone && <p style={{ margin: 0 }}>
+              <strong>موبایل: </strong> {me.phone }
+            </p>}
+            {/* <button
               type="button"
               className="btn btn-secondary"
               onClick={() => {
@@ -75,7 +78,7 @@ function DashboardContent() {
               <Link href="/inbox" className="btn btn-secondary">
                 اینباکس ({inbox?.total ?? 0})
               </Link>
-            </div>
+            </div> */}
           </div>
         ) : null}
       </Card>

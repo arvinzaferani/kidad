@@ -4,6 +4,7 @@ import { QueryProvider } from './providers/query-provider';
 import { AlertProvider } from './providers/alert-provider';
 import { AccountCompletionProvider } from './providers/account-completion-provider';
 import { KeyboardDetector } from './components/keyboard-detector';
+import { ThemeMetaSync } from './components/theme-meta-sync';
 
 export const metadata: Metadata = {
   title: 'کی‌داد؟',
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#16a34a',
+  themeColor: '#f5f4ef',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -53,6 +54,7 @@ export default function RootLayout({
       </head>
       <body>
         <KeyboardDetector />
+        <ThemeMetaSync />
         <QueryProvider>
           <AlertProvider>
             <AccountCompletionProvider>{children}</AccountCompletionProvider>

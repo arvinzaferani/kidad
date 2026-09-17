@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ReactNode, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppShell, Card } from '../components/ui';
+import { BrandLoader } from '../components/brand-loader';
 import { HomeIcon, ShieldIcon, UsersIcon } from '../components/icons';
 import { useAuthMe } from '../../lib/auth/hooks';
 
@@ -31,7 +32,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <AppShell title="پنل ادمین" subtitle="مدیریت کاربران، گروه‌ها و آمار سیستم">
       {!me?.isAdmin ? (
         <Card>
-          <p style={{ margin: 0 }}>در حال بررسی دسترسی...</p>
+          <BrandLoader label="در حال بررسی دسترسی..." />
         </Card>
       ) : (
         <div className="admin-layout">

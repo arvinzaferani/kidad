@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react';
 import { ModalPortal } from '../components/modal-portal';
+import { BrandLoader } from '../components/brand-loader';
 import { getApiError, useAuthMe, useSetPassword } from '../../lib/auth/hooks';
 
 interface AccountCompletionContextValue {
@@ -170,7 +171,7 @@ export function RequireCompletedAccount({
   }, [incomplete, openCompletion]);
 
   if (isLoading) {
-    return <>{loading ?? <div className="placeholder">در حال بررسی حساب...</div>}</>;
+    return <>{loading ?? <BrandLoader />}</>;
   }
 
   if (!me || me.status === 'ONBOARDING') {

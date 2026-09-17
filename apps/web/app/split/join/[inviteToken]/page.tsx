@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { AppShell, Card } from '../../../components/ui';
 import { ModalPortal } from '../../../components/modal-portal';
+import { BrandLoader } from '../../../components/brand-loader';
 import { getAuthToken } from '../../../../lib/auth/token';
 import {
   getApiError,
@@ -93,7 +94,7 @@ export default function SplitJoinPage() {
     >
       <Card>
         {isLoading ? (
-          <div className="placeholder">در حال بررسی دعوتنامه...</div>
+          <BrandLoader label="در حال بررسی دعوتنامه..." />
         ) : isError || !invite ? (
           <div className="notice notice-error">
             این دعوتنامه نامعتبر است یا دیگر فعال نیست.

@@ -747,7 +747,7 @@ a {
   opacity: 1;
   color: var(--accent);
 }
-.app-header-icon-btn-active {
+.app-header-icon-btn-active-admin {
   opacity: 1;
   color: var(--neu-admin);
 }

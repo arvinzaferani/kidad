@@ -26,7 +26,7 @@
   --card: #ffffff;
   --card-foreground: #1a1f2e;
   --border: #d5dbe3;
-
+  --neu-admin: #ce53e1;
   --motion-duration-fast: 150ms;
   --motion-duration-normal: 250ms;
   --motion-duration-slow: 450ms;
@@ -66,6 +66,7 @@
   --card: #080b11;
   --border: #2a3448;
   --accent: #4ac0de;
+  --neu-admin: #ce53e1;
   --accent-fg: #000000;
   --debit-fg: #ffb4ab;
   --debit-bg: color-mix(in srgb, #ef4444 20%, transparent);
@@ -122,7 +123,7 @@
     --card: #25272c;
     --card-foreground: #e0e4ec;
     --border: #2a3448;
-
+    --neu-admin: #ce53e1;
     --neu-bg: #252628;
     --neu-shadow-dark: #191b1a;
     --neu-shadow-light: #2e3032;
@@ -719,6 +720,25 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+.app-admin-header-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  border: none;
+  color: var(--fg);
+  opacity: 0.75;
+  background: var(--neu-bg);
+  /* box-shadow: inset 1px 1px 2px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light); */
+
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark), -3px -3px 6px var(--neu-shadow-light), inset 1px 1px 2px var(--neu-shadow-dark), inset -1px -1px 2px var(--neu-shadow-light);
+  text-decoration: none;
+  transition: opacity 150ms ease, color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .app-header-icon-btn:active {
   box-shadow: inset 2px 2px 4px var(--neu-shadow-dark), inset -2px -2px 4px var(--neu-shadow-light);
 }
@@ -726,6 +746,10 @@ a {
 .app-header-icon-btn-active {
   opacity: 1;
   color: var(--accent);
+}
+.app-header-icon-btn-active {
+  opacity: 1;
+  color: var(--neu-admin);
 }
 
 .sidebar-panel {
@@ -1150,9 +1174,9 @@ a {
 }
 
 .admin-nav-link-active {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--card));
-  color: var(--accent);
+  border-color: var(--neu-admin);
+  background: color-mix(in srgb, var(--neu-admin) 12%, var(--card));
+  color: var(--neu-admin);
 }
 
 .admin-content {
@@ -1214,10 +1238,10 @@ a {
 .admin-readonly-banner {
   width: fit-content;
   margin-bottom: 0.75rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--neu-admin) 35%, var(--border));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--neu-admin) 10%, transparent);
+  color: var(--neu-admin);
   padding: 0.25rem 0.65rem;
   font-size: 0.76rem;
   font-weight: 500;

@@ -232,7 +232,7 @@ export default function SplitSessionPage() {
               }
             >
               <div className="stack-qr">
-                <SplitQr value={`${process.env.FRONTEND_ORIGIN ?? 'https://kidad.ir'}/split/join/${session.inviteToken}`} />
+                <SplitQr value={`${window.location.origin}/split/join/${session.inviteToken}`} />
                 <div className="grid-two">
                   <button type="button" className="btn btn-primary" onClick={copyLink}>
                     {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}

@@ -45,7 +45,7 @@ export function AppShell({
     { href: '/quick-split', label: 'دنگ', icon: SplitIcon },
     { href: '/friends', label: 'دوستان', icon: UsersIcon },
     { href: '/profile', label: 'پروفایل', icon: UserIcon },
-    ...(me?.isAdmin ? [{ href: '/admin', label: 'ادمین', icon: ShieldIcon }] : []),
+    // ...(me?.isAdmin ? [{ href: '/admin', label: 'ادمین', icon: ShieldIcon }] : []),
   ];
 
   return (<>
@@ -68,6 +68,15 @@ export function AppShell({
           {subtitle ? <p className="subtitle">{subtitle}</p> : null}
         </div>
         <div className={`app-header-actions ${shouldCenterMain ? 'app-header-actions-hidden' : ''}`}>
+          {isLoggedIn && me?.isAdmin ? (
+            <Link
+              href="/admin"
+              className={`app-header-icon-btn ${pathname === '/admin' || pathname.startsWith('/admin/') ? 'app-header-icon-btn-active-admin' : ''}`}
+              aria-label="ادمین"
+              title="ادمین"
+            >
+              <ShieldIcon size={18} />
+            </Link>) : null}
           {isLoggedIn ? (
             <Link
               href="/inbox"
@@ -95,37 +104,37 @@ export function AppShell({
     </main>
     {shouldCenterMain ? null : (
       <nav className="bottom-nav" role="navigation" aria-label="ناوبری اصلی">
-      {navItems.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const Icon = item.icon;
-        return (item.href === '/quick-split' ?
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`quick-bottom-nav-item ${active ? 'quick-bottom-nav-item-active' : ''}`}
-            aria-current={active ? 'page' : undefined}
-          >
-            <div className='quick-in'>
+        {navItems.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
+          return (item.href === '/quick-split' ?
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`quick-bottom-nav-item ${active ? 'quick-bottom-nav-item-active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+            >
+              <div className='quick-in'>
+                <span className={`bottom-nav-icon `} aria-hidden="true">
+                  <Icon size={18} />
+                </span>
+                <span className="bottom-nav-label">{item.label}</span>
+              </div>
+            </Link> :
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`bottom-nav-item ${active ? 'bottom-nav-item-active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+            >
               <span className={`bottom-nav-icon `} aria-hidden="true">
                 <Icon size={18} />
               </span>
               <span className="bottom-nav-label">{item.label}</span>
-            </div>
-          </Link> :
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`bottom-nav-item ${active ? 'bottom-nav-item-active' : ''}`}
-            aria-current={active ? 'page' : undefined}
-          >
-            <span className={`bottom-nav-icon `} aria-hidden="true">
-              <Icon size={18} />
-            </span>
-            <span className="bottom-nav-label">{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+            </Link>
+          );
+        })}
+      </nav>
     )}
   </>);
 }

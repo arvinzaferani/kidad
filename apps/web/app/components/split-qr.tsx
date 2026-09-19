@@ -11,7 +11,6 @@ export function SplitQr({ value }: { value: string }) {
     let alive = true;
     setDataUrl(null);
     setFailed(false);
-    console.log(value)
     QRCode.toDataURL(value, {
       width: 280,
       margin: 2,

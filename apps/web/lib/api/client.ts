@@ -13,7 +13,6 @@ const baseURL = (() => {
     ? trimmed
     : `${trimmed}${trimmed.length ? '/' : ''}api`;
 })();
-console.log(baseURL)
 export const apiClient = axios.create({
   baseURL,
   timeout: 10000,

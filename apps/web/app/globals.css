@@ -60,38 +60,36 @@
 }
 
 .dark {
-  --bg: #303030;
-  --fg: #e0e4ec;
-  --muted: #1b331d;
-  --card: #080b11;
-  --border: #2a3448;
-  --accent: #4ac0de;
-  --neu-admin: #ce53e1;
-  --accent-fg: #000000;
-  --debit-fg: #ffb4ab;
-  --debit-bg: color-mix(in srgb, #ef4444 20%, transparent);
-  --debit-border: color-mix(in srgb, #f87171 62%, transparent);
-  --credit-fg: #99f6b5;
-  --credit-bg: color-mix(in srgb, #22c55e 20%, transparent);
-  --credit-border: color-mix(in srgb, #4ade80 62%, transparent);
+  --bg: #282a2b;
+    --fg: #e0e4ec;
+    --muted: #1b331d;
+    --card: #151a24;
+    --border: #2a3448;
+    --accent-fg: #0d1015;
+    --debit-fg: #ffb4ab;
+    --debit-bg: color-mix(in srgb, #ef4444 20%, transparent);
+    --debit-border: color-mix(in srgb, #f87171 62%, transparent);
+    --credit-fg: #99f6b5;
+    --credit-bg: color-mix(in srgb, #22c55e 20%, transparent);
+    --credit-border: color-mix(in srgb, #4ade80 62%, transparent);
 
-  --background: #0f1422;
-  --foreground: #e0e4ec;
-  --primary: #4ade80;
-  --primary-foreground: #000000;
-  --secondary: #1b2333;
-  --secondary-foreground: #e0e4ec;
-  --accent: #4ade80;
-  --accent-foreground: #000000;
-  --muted: #1b331d;
-  --muted-foreground: #e0e4ec;
-  --card: #080b11;
-  --card-foreground: #e0e4ec;
-  --border: #2a3448;
-
-  --neu-bg: #303030;
-  --neu-shadow-dark: #050811;
-  --neu-shadow-light: #151e30;
+    --background: #101522;
+    --foreground: #e0e4ec;
+    --primary: #2fa99c;
+    --primary-foreground: #0d1015;
+    --secondary: #1a2130;
+    --secondary-foreground: #e0e4ec;
+    --accent: #5daca9;
+    --accent-foreground: #0d1015;
+    --muted: #1d2929;
+    --muted-foreground: #e0ece2;
+    --card: #25272c;
+    --card-foreground: #e0e4ec;
+    --border: #2a3448;
+    --neu-admin: #ce53e1;
+    --neu-bg: #252628;
+    --neu-shadow-dark: #191b1a;
+    --neu-shadow-light: #2e3032;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -101,7 +99,6 @@
     --muted: #1b331d;
     --card: #151a24;
     --border: #2a3448;
-    --accent: #4ade80;
     --accent-fg: #0d1015;
     --debit-fg: #ffb4ab;
     --debit-bg: color-mix(in srgb, #ef4444 20%, transparent);

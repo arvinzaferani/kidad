@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 COPY tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/package.json
 
-RUN npm ci --workspace apps/api --include-workspace-root=false
+RUN npm ci --workspace apps/api --include-workspace-root=false --loglevel verbose
 
 COPY apps/api ./apps/api
 

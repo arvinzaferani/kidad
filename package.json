@@ -20,5 +20,7 @@
   "devDependencies": {
     "typescript": "^5.6.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "socks-proxy-agent": "^7.0.0"
+  }
 }

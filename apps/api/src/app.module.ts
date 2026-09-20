@@ -11,6 +11,7 @@ import { FriendsModule } from './friends/friends.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AdminModule } from './admin/admin.module';
 import { SplitModule } from './split/split.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SplitModule } from './split/split.module';
     DashboardModule,
     AdminModule,
     SplitModule,
+    TelegramModule,
   ],
 })
 export class AppModule {}

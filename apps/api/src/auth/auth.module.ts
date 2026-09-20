@@ -10,6 +10,7 @@ import {
 } from '../database/entities';
 import { AuthMailerService } from './auth-mailer.service';
 import { EMAIL_CONFIG, loadEmailConfig } from '../config/email.config';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { EMAIL_CONFIG, loadEmailConfig } from '../config/email.config';
       PasswordResetToken,
       EmailLoginToken,
     ]),
+    TelegramModule
   ],
   controllers: [AuthController],
   providers: [

@@ -26,11 +26,11 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SendLoginLinkDto } from './dto/send-login-link.dto';
 import { LoginWithLinkDto } from './dto/login-with-link.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
@@ -41,6 +41,7 @@ export class AuthService {
     @InjectRepository(EmailLoginToken)
     private readonly emailLoginTokensRepository: Repository<EmailLoginToken>,
     private readonly authMailerService: AuthMailerService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -95,6 +96,24 @@ export class AuthService {
     }
     if (user.isBanned) {
       throw new UnauthorizedException('حساب کاربری شما مسدود شده است.');
+    }
+    if (user.isAdmin) {
+      this.telegramService
+        .sendMessage(
+          [
+            '🔐 ورود ادمین به Kidad',
+            '',
+            `👤 نام: ${user.nickname}`,
+            `📧 ایمیل: ${user.email}`,
+            `📅 زمان ورود: ${new Date().toLocaleString('fa-IR')}`,
+          ].join('\n'),
+        )
+        .catch((error) => {
+          this.logger.error(
+            'Failed to send admin login notification',
+            error instanceof Error ? error.stack : String(error),
+          );
+        });
     }
     return {
       user: this.toSafeUser(user),

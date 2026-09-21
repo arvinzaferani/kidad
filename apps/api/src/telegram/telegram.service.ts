@@ -28,7 +28,7 @@ export class TelegramService {
     this.chatId = chatId;
 
     const { httpAgent, httpsAgent } = SocksAgent({
-        host: '127.0.0.1',
+        host: '172.19.0.1',
         port: 1080,
         agentOptions: {},
       });

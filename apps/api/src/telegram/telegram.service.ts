@@ -14,13 +14,16 @@ export class TelegramService {
     const proxyUrl =
       process.env.TELEGRAM_PROXY_URL || 'socks5://127.0.0.1:1080';
 
-    if (!token) {
-      throw new Error('TELEGRAM_BOT_TOKEN is not configured');
-    }
-
-    if (!chatId) {
-      throw new Error('TELEGRAM_CHAT_ID is not configured');
-    }
+      if (!token || !chatId) {
+        this.logger.warn(
+          'Telegram notifications are disabled: missing configuration',
+        );
+      
+        this.client = axios.create();
+        this.chatId = '';
+      
+        return;
+      }
 
     this.chatId = chatId;
 
@@ -40,6 +43,10 @@ export class TelegramService {
   }
 
   async sendMessage(text: string) {
+    if (!this.chatId) {
+        return;
+      }
+    
     try {
       const response = await this.client.post('/sendMessage', {
         chat_id: this.chatId,

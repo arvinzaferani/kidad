@@ -53,6 +53,10 @@ services:
       APP_WEB_URL: ${APP_WEB_URL:-https://kidad.ir}
       EMAIL_VERIFY_TTL_MINUTES: ${EMAIL_VERIFY_TTL_MINUTES:-30}
 
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      TELEGRAM_PROXY_URL: socks5://host.docker.internal:1080
+
     extra_hosts:
         - "host.docker.internal:host-gateway"
 

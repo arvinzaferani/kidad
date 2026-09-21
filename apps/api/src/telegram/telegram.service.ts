@@ -12,7 +12,7 @@ export class TelegramService {
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
     const proxyUrl =
-      process.env.TELEGRAM_PROXY_URL || 'socks5://127.0.0.1:1080';
+      process.env.TELEGRAM_PROXY_URL ;
 
       if (!token || !chatId) {
         this.logger.warn(

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
-import { SocksProxyAgent } from 'socks-proxy-agent';
+import SocksAgent from 'axios-socks5-agent';
 @Injectable()
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
@@ -24,12 +24,16 @@ export class TelegramService {
 
     this.chatId = chatId;
 
-    const agent = new SocksProxyAgent(proxyUrl);
+    const { httpAgent, httpsAgent } = SocksAgent({
+        host: '127.0.0.1',
+        port: 1080,
+        agentOptions: {},
+      });
 
     this.client = axios.create({
       baseURL: `https://api.telegram.org/bot${token}`,
-      httpAgent: agent,
-      httpsAgent: agent,
+       httpAgent,
+  httpsAgent,
       proxy: false,
       timeout: 15_000,
     });

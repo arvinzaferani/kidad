@@ -44,17 +44,24 @@ export class TelegramService {
 
   async sendMessage(text: string) {
     if (!this.chatId) {
+        this.logger.warn('Telegram chat ID is missing');
         return;
       }
     
-    try {
-      const response = await this.client.post('/sendMessage', {
-        chat_id: this.chatId,
-        text,
-      });
-
-      return response.data;
-    } catch (error) {
+      try {
+        this.logger.log('Sending Telegram message...');
+    
+        const response = await this.client.post('/sendMessage', {
+          chat_id: this.chatId,
+          text,
+        });
+    
+        this.logger.log(
+          `Telegram response: ${JSON.stringify(response.data)}`,
+        );
+    
+        return response.data;
+      } catch (error) {
       this.logger.error(
         'Failed to send Telegram message',
         error instanceof Error ? error.stack : String(error),
